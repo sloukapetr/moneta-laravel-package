@@ -1,0 +1,108 @@
+<?php
+
+namespace SloukaPetr\Moneta\Tests\Feature;
+
+use Illuminate\Support\Facades\Http;
+use SloukaPetr\Moneta\Facades\Moneta;
+use SloukaPetr\Moneta\Tests\TestCase;
+
+class MonetaAispTest extends TestCase
+{
+    public function test_fake_can_be_used_for_accounts(): void
+    {
+        Moneta::fake([
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts*' => Http::response([
+                'accounts' => [
+                    [
+                        'id' => 'acc-fake',
+                        'nameI18N' => 'Fake account',
+                        'currency' => 'EUR',
+                        'identification' => ['iban' => 'DE0000000000000000000000', 'other' => '2222'],
+                        'ownersNames' => ['Fake Corp'],
+                        'servicer' => ['bankCode' => '1000', 'bic' => 'DEUTDEFF', 'countryCode' => 'DE'],
+                    ],
+                ],
+                'pageNumber' => 0,
+                'pageSize' => 10,
+                'pageCount' => 1,
+            ], 200),
+        ]);
+
+        $accounts = Moneta::accounts()->all();
+
+        $this->assertCount(1, $accounts);
+        $this->assertSame('acc-fake', $accounts[0]->id);
+        $this->assertSame('EUR', $accounts[0]->currency);
+    }
+
+    public function test_transactions_extract_symbols_from_creditor_reference(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts/acc-1/transactions*' => Http::response([
+                'transactions' => [
+                    [
+                        'entryReference' => 'trx-1',
+                        'status' => 'BOOK',
+                        'creditDebitIndicator' => 'DBIT',
+                        'amount' => ['currency' => 'CZK', 'value' => 101.5],
+                        'bookingDate' => ['date' => '2026-08-01'],
+                        'valueDate' => ['date' => '2026-08-01'],
+                        'entryDetails' => [
+                            'transactionDetails' => [
+                                'remittanceInformation' => [
+                                    'structured' => [
+                                        'creditorReferenceInformation' => [
+                                            'reference' => 'VS:123456 KS:0308 SS:0001',
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'pageNumber' => 0,
+                'pageSize' => 10,
+                'pageCount' => 1,
+            ], 200),
+        ]);
+
+        $transactions = Moneta::transactions()->get('acc-1');
+
+        $this->assertCount(1, $transactions);
+        $this->assertSame('123456', $transactions[0]->variableSymbol);
+        $this->assertSame('0308', $transactions[0]->constantSymbol);
+        $this->assertSame('0001', $transactions[0]->specificSymbol);
+    }
+
+    public function test_statement_file_download_returns_binary_body(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts/statement*' => Http::response('<xml>statement</xml>', 200, [
+                'Content-Type' => 'application/octet-stream',
+            ]),
+        ]);
+
+        $content = Moneta::statements()->downloadFile('file-123');
+
+        $this->assertSame('<xml>statement</xml>', $content);
+    }
+
+    public function test_context_override_changes_auth_and_business_headers(): void
+    {
+        Http::fake([
+            '*' => Http::response(['accounts' => [], 'pageNumber' => 0, 'pageSize' => 10, 'pageCount' => 0], 200),
+        ]);
+
+        Moneta::withContext([
+            'api_token' => 'override-token',
+            'business_name' => 'Override Business',
+            'identification_number' => '99999999',
+        ])->accounts()->all();
+
+        Http::assertSent(function ($request) {
+            return $request->hasHeader('Authorization', 'Bearer override-token')
+                && $request->hasHeader('business_name', 'Override Business')
+                && $request->hasHeader('identification_number', '99999999');
+        });
+    }
+}

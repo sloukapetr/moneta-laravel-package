@@ -1,0 +1,44 @@
+{
+    "name": "sloukapetr/moneta-laravel-package",
+    "description": "Lightweight Laravel package for Moneta Money Bank VIP REST API integration.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/http": "^10.0|^11.0|^12.0",
+        "spatie/laravel-data": "^4.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "pestphp/pest": "^2.0|^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SloukaPetr\\Moneta\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SloukaPetr\\Moneta\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SloukaPetr\\Moneta\\MonetaServiceProvider"
+            ],
+            "aliases": {
+                "Moneta": "SloukaPetr\\Moneta\\Facades\\Moneta"
+            }
+        }
+    },
+    "scripts": {
+        "test": "pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
