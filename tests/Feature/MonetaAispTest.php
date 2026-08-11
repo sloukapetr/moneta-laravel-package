@@ -87,6 +87,41 @@ class MonetaAispTest extends TestCase
         $this->assertSame('<xml>statement</xml>', $content);
     }
 
+    public function test_balance_accepts_single_balance_object_response(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts/acc-1/balance*' => Http::response([
+                'amount' => ['currency' => 'CZK', 'value' => 125.25],
+                'creditDebitIndicator' => 'CRDT',
+                'date' => ['dateTime' => '2026-08-10T12:00:00+00:00'],
+                'type' => ['codeOrProprietary' => ['code' => 'CLAV']],
+            ], 200),
+        ]);
+
+        $balance = Moneta::accounts()->getBalance('acc-1');
+
+        $this->assertSame('CZK', $balance->currency);
+        $this->assertSame(125.25, $balance->value);
+        $this->assertSame('CRDT', $balance->creditDebitIndicator);
+        $this->assertSame('2026-08-10T12:00:00+00:00', $balance->dateTime);
+        $this->assertSame('CLAV', $balance->balanceType);
+    }
+
+    public function test_statement_download_url_is_exposed_from_response(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts/acc-1/statement/download*' => Http::response([
+                'dataDownloadURL' => 'https://example.test/statements/123.pdf',
+                'exportStatement' => [],
+                'transactions' => [],
+            ], 200),
+        ]);
+
+        $url = Moneta::statements()->downloadUrl('acc-1', 'stmt-1');
+
+        $this->assertSame('https://example.test/statements/123.pdf', $url);
+    }
+
     public function test_context_override_changes_auth_and_business_headers(): void
     {
         Http::fake([

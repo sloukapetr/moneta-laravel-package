@@ -26,8 +26,16 @@ class StatementService
     {
         return $this->moneta->get('api/v4/vip/aisp/my/accounts/'.$accountId.'/statement/download', [
             'accountStatementId' => $statementId,
+            'statementId' => $statementId,
             'format' => $format,
         ]);
+    }
+
+    public function downloadUrl(string $accountId, string $statementId, string $format = 'XML'): ?string
+    {
+        $response = $this->download($accountId, $statementId, $format);
+
+        return $response['dataDownloadURL'] ?? null;
     }
 
     public function downloadFile(string $fileId): string

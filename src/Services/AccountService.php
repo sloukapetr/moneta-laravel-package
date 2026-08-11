@@ -40,8 +40,14 @@ class AccountService
     {
         $response = $this->moneta->get('api/v4/vip/aisp/my/accounts/'.$id.'/balance', $filters);
 
-        $balances = $response['balances'] ?? [];
+        $balances = $response['balances'] ?? $response;
 
-        return BalanceData::fromArray($balances[0] ?? []);
+        if (is_array($balances) && array_is_list($balances)) {
+            $balance = $balances[0] ?? [];
+        } else {
+            $balance = $balances;
+        }
+
+        return BalanceData::fromArray($balance);
     }
 }

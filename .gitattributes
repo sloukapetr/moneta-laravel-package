@@ -1,2 +1,14 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+/.github export-ignore
+/tests export-ignore
+/vendor export-ignore
+/node_modules export-ignore
+/.env export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/phpunit.xml export-ignore
+/pest.xml export-ignore
+/pest.php export-ignore
+/VipAISPPayments_v4.json export-ignore

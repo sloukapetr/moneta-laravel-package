@@ -61,4 +61,55 @@ class MonetaClientTest extends TestCase
         $this->assertSame('acc-1', $accounts[0]->id);
         $this->assertSame('CZK', $accounts[0]->currency);
     }
+
+    public function test_client_credentials_token_can_be_used_for_follow_up_calls(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/auth/oauth/v2/token' => Http::response([
+                'access_token' => 'oauth-token-123',
+                'token_type' => 'Bearer',
+                'expires_in' => 1200,
+                'scope' => 'vip_sandbox',
+            ], 200),
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts*' => Http::response([
+                'accounts' => [
+                    [
+                        'id' => 'acc-oauth',
+                        'nameI18N' => 'OAuth account',
+                        'currency' => 'CZK',
+                        'identification' => ['iban' => 'CZ0000000000000000000009', 'other' => '9999'],
+                        'ownersNames' => ['OAuth Corp'],
+                        'servicer' => ['bankCode' => '0600', 'bic' => 'AGBACZPP', 'countryCode' => 'CZE'],
+                    ],
+                ],
+                'pageNumber' => 0,
+                'pageSize' => 10,
+                'pageCount' => 1,
+            ], 200),
+        ]);
+
+        $accounts = Moneta::withContext([
+            'client_id' => 'client-id',
+            'client_secret' => 'client-secret',
+            'oauth_scope' => 'vip_sandbox',
+        ])->withClientCredentials()->accounts()->all();
+
+        $this->assertCount(1, $accounts);
+        $this->assertSame('acc-oauth', $accounts[0]->id);
+
+        Http::assertSent(function ($request) {
+            if ($request->url() === 'https://api.moneta.cz/auth/oauth/v2/token') {
+                return $request['client_id'] === 'client-id'
+                    && $request['client_secret'] === 'client-secret'
+                    && $request['grant_type'] === 'client_credentials'
+                    && $request['scope'] === 'vip_sandbox';
+            }
+
+            if (str_contains($request->url(), '/api/v4/vip/aisp/my/accounts')) {
+                return $request->hasHeader('Authorization', 'Bearer oauth-token-123');
+            }
+
+            return false;
+        });
+    }
 }

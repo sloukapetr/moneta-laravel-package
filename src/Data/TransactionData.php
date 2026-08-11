@@ -2,9 +2,7 @@
 
 namespace SloukaPetr\Moneta\Data;
 
-use Spatie\LaravelData\Data;
-
-class TransactionData extends Data
+class TransactionData
 {
     public function __construct(
         public string $entryReference,

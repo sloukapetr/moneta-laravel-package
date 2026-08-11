@@ -2,9 +2,7 @@
 
 namespace SloukaPetr\Moneta\Data;
 
-use Spatie\LaravelData\Data;
-
-class StatementData extends Data
+class StatementData
 {
     public function __construct(
         public string $accountStatementId,

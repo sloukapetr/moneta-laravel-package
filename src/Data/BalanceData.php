@@ -2,15 +2,15 @@
 
 namespace SloukaPetr\Moneta\Data;
 
-use Spatie\LaravelData\Data;
-
-class BalanceData extends Data
+class BalanceData
 {
     public function __construct(
         public string $currency,
         public float $value,
         public string $creditDebitIndicator = '',
         public string $type = '',
+        public ?string $dateTime = null,
+        public ?string $balanceType = null,
     ) {
     }
 
@@ -20,6 +20,8 @@ class BalanceData extends Data
             (string) data_get($data, 'amount.currency', ''),
             (float) data_get($data, 'amount.value', 0),
             (string) ($data['creditDebitIndicator'] ?? ''),
+            (string) data_get($data, 'type.codeOrProprietary.code', ''),
+            data_get($data, 'date.dateTime'),
             (string) data_get($data, 'type.codeOrProprietary.code', ''),
         );
     }

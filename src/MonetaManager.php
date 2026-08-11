@@ -41,6 +41,55 @@ class MonetaManager
         return $instance;
     }
 
+    public function withClientCredentials(?string $scope = null): static
+    {
+        $tokenResponse = $this->issueAccessToken(scope: $scope);
+        $token = (string) ($tokenResponse['access_token'] ?? '');
+
+        if ($token === '') {
+            throw new \RuntimeException('Moneta OAuth token response does not contain access_token.');
+        }
+
+        return $this->withToken($token);
+    }
+
+    public function issueAccessToken(
+        ?string $clientId = null,
+        ?string $clientSecret = null,
+        ?string $scope = null,
+        string $grantType = 'client_credentials',
+    ): array {
+        $clientId ??= (string) $this->resolveConfig('client_id', '');
+        $clientSecret ??= (string) $this->resolveConfig('client_secret', '');
+        $scope ??= (string) $this->resolveConfig('oauth_scope', 'vip_sandbox');
+
+        $tokenUrl = (string) $this->resolveConfig('oauth_token_url', 'https://api.moneta.cz/auth/oauth/v2/token');
+
+        if ($clientId === '' || $clientSecret === '') {
+            throw new \InvalidArgumentException('Moneta OAuth client_id and client_secret must be configured.');
+        }
+
+        try {
+            $response = Http::asForm()
+                ->timeout((int) $this->resolveConfig('timeout', 15))
+                ->retry((int) $this->resolveConfig('retry', 3), 100, null, false)
+                ->post($tokenUrl, [
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                    'grant_type' => $grantType,
+                    'scope' => $scope,
+                ]);
+        } catch (ConnectionException $exception) {
+            throw new NetworkException('Unable to connect to Moneta OAuth endpoint.', 0, $exception);
+        }
+
+        if ($response->failed()) {
+            $this->throwForStatus($response);
+        }
+
+        return $response->json() ?? [];
+    }
+
     public function fake(array $responses = []): void
     {
         Http::fake($responses);
@@ -138,9 +187,13 @@ class MonetaManager
     protected function throwForStatus(Response $response): void
     {
         $payload = $response->json();
+        $payload = is_array($payload) ? $payload : [];
         $status = $response->status();
-        $message = $payload['errors'][0]['message'] ?? 'Moneta API request failed.';
-        $errorCode = $payload['errors'][0]['error'] ?? null;
+        $message = $payload['errors'][0]['message']
+            ?? $payload['error_description']
+            ?? $payload['message']
+            ?? 'Moneta API request failed.';
+        $errorCode = $payload['errors'][0]['error'] ?? ($payload['error'] ?? null);
         $scope = $payload['errors'][0]['scope'] ?? null;
         $parameters = $payload['errors'][0]['parameters'] ?? [];
 

@@ -2,9 +2,7 @@
 
 namespace SloukaPetr\Moneta\Data;
 
-use Spatie\LaravelData\Data;
-
-class AccountData extends Data
+class AccountData
 {
     public function __construct(
         public string $id,
@@ -15,6 +13,8 @@ class AccountData extends Data
         public string $bankCode = '',
         public string $bic = '',
         public string $countryCode = '',
+        public string $productName = '',
+        public string $feePlan = '',
     ) {
     }
 
@@ -29,6 +29,8 @@ class AccountData extends Data
             (string) data_get($data, 'servicer.bankCode', ''),
             (string) data_get($data, 'servicer.bic', ''),
             (string) data_get($data, 'servicer.countryCode', ''),
+            (string) ($data['productI18N'] ?? ''),
+            (string) ($data['feePlanI18N'] ?? ''),
         );
     }
 }
