@@ -61,7 +61,15 @@ class MonetaManager
     ): array {
         $clientId ??= (string) $this->resolveConfig('client_id', '');
         $clientSecret ??= (string) $this->resolveConfig('client_secret', '');
-        $scope ??= (string) $this->resolveConfig('oauth_scope', 'vip_sandbox');
+
+        if ($scope === null) {
+            $configuredScope = $this->resolveConfig('oauth_scope');
+            if (is_string($configuredScope) && trim($configuredScope) !== '') {
+                $scope = $configuredScope;
+            } elseif ((bool) $this->resolveConfig('sandbox', true)) {
+                $scope = 'vip_sandbox';
+            }
+        }
 
         $tokenUrl = (string) $this->resolveConfig('oauth_token_url', 'https://api.moneta.cz/auth/oauth/v2/token');
 
@@ -70,15 +78,20 @@ class MonetaManager
         }
 
         try {
+            $payload = [
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'grant_type' => $grantType,
+            ];
+
+            if (is_string($scope) && trim($scope) !== '') {
+                $payload['scope'] = $scope;
+            }
+
             $response = Http::asForm()
                 ->timeout((int) $this->resolveConfig('timeout', 15))
                 ->retry((int) $this->resolveConfig('retry', 3), 100, null, false)
-                ->post($tokenUrl, [
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
-                    'grant_type' => $grantType,
-                    'scope' => $scope,
-                ]);
+                ->post($tokenUrl, $payload);
         } catch (ConnectionException $exception) {
             throw new NetworkException('Unable to connect to Moneta OAuth endpoint.', 0, $exception);
         }

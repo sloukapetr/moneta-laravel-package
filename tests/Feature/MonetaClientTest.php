@@ -112,4 +112,37 @@ class MonetaClientTest extends TestCase
             return false;
         });
     }
+
+    public function test_client_credentials_use_sandbox_scope_when_scope_is_not_explicitly_set(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/auth/oauth/v2/token' => Http::response([
+                'access_token' => 'oauth-token-456',
+                'token_type' => 'Bearer',
+                'expires_in' => 1200,
+                'scope' => 'vip_sandbox',
+            ], 200),
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts*' => Http::response([
+                'accounts' => [],
+                'pageNumber' => 0,
+                'pageSize' => 10,
+                'pageCount' => 0,
+            ], 200),
+        ]);
+
+        Moneta::withContext([
+            'client_id' => 'client-id',
+            'client_secret' => 'client-secret',
+            'oauth_scope' => null,
+            'sandbox' => true,
+        ])->withClientCredentials()->accounts()->all();
+
+        Http::assertSent(function ($request) {
+            if ($request->url() !== 'https://api.moneta.cz/auth/oauth/v2/token') {
+                return false;
+            }
+
+            return $request['scope'] === 'vip_sandbox';
+        });
+    }
 }

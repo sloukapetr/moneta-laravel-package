@@ -26,7 +26,6 @@ class StatementService
     {
         return $this->moneta->get('api/v4/vip/aisp/my/accounts/'.$accountId.'/statement/download', [
             'accountStatementId' => $statementId,
-            'statementId' => $statementId,
             'format' => $format,
         ]);
     }
