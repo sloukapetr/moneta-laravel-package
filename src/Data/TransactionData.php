@@ -2,6 +2,7 @@
 
 namespace SloukaPetr\Moneta\Data;
 
+use InvalidArgumentException;
 use SloukaPetr\Moneta\Enums\CreditDebit;
 use SloukaPetr\Moneta\Enums\TransactionStatus;
 use SloukaPetr\Moneta\Support\MinorAmount;
@@ -37,7 +38,13 @@ class TransactionData
         public ?string $endToEndIdentification = null,
         public PaymentSymbols $symbols = new PaymentSymbols(null, null, null),
         public array $raw = [],
+        public bool $amountInvalid = false,
     ) {}
+
+    public function hasReference(): bool
+    {
+        return $this->entryReference !== '';
+    }
 
     public static function fromArray(array $data): self
     {
@@ -49,12 +56,21 @@ class TransactionData
         $indicator = (string) ($data['creditDebitIndicator'] ?? '');
         $direction = $indicator === '' ? null : CreditDebit::tryFrom($indicator);
         $counterparty = self::counterparty($data, $direction);
+        $amountSource = is_int($amountValue) || is_float($amountValue) || is_string($amountValue) ? $amountValue : 0;
+        $amountMinor = 0;
+        $amountInvalid = false;
+
+        try {
+            $amountMinor = MinorAmount::fromApi($amountSource);
+        } catch (InvalidArgumentException) {
+            $amountInvalid = true;
+        }
 
         return new self(
             (string) ($data['entryReference'] ?? ''),
             $status,
             $indicator,
-            (float) (is_int($amountValue) || is_float($amountValue) || is_string($amountValue) ? $amountValue : 0),
+            (float) $amountSource,
             (string) data_get($data, 'amount.currency', ''),
             self::nullableString(data_get($data, 'bookingDate.date')),
             self::nullableString(data_get($data, 'enteredDate.date')),
@@ -65,7 +81,7 @@ class TransactionData
             $symbols->vs,
             $symbols->ks,
             $symbols->ss,
-            MinorAmount::fromApi(is_int($amountValue) || is_float($amountValue) || is_string($amountValue) ? $amountValue : 0),
+            $amountMinor,
             $status === '' ? null : TransactionStatus::tryFrom($status),
             $direction,
             ($data['reversalIndicator'] ?? false) === true,
@@ -77,6 +93,7 @@ class TransactionData
             self::nullableString(data_get($data, 'entryDetails.transactionDetails.references.endToEndIdentification')),
             $symbols,
             $data,
+            $amountInvalid,
         );
     }
 

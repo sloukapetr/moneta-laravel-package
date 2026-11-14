@@ -6,7 +6,50 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-14
+
+### Added
+
+- `moneta:accounts` lists accounts and booked/available balances. `--json` prints the same rows. `--profile=` selects a connection.
+- `moneta:check` reports the profile, mode, base URL, whether credentials are set, the account count and static-token expiration. A token inside `--warn-days` (default 14) is a warning and still exits 0. Any failed check exits 1.
+- `StatementService::json()` reads an official JSON statement (`JSON$EMBD`, or the file behind `dataDownloadURL`) into minor-unit balances. `verify()` checks that the opening balance plus credits minus debits equals the closing balance. `transactionTotals()` sums the statement lines. `listFor()` lists one calendar month.
+
+### Fixed
+
+- `Moneta::profile()`, `withToken()` and `withContext()` on `MonetaFake` share accounts, transactions, balances and recorded calls. `assertProfileUsed()` checks the profile name stored on each call.
+- `BalanceData::$signedAmountMinor` carries the sign (`DBIT` is negative) and `isNegative()` reports it. `$amountMinor` stays the absolute value.
+- HTTP 429 waits for `Retry-After` (seconds or an HTTP date). Without that header the delay is `retry_sleep * 2^(attempt-1)`, capped by `retry_max_sleep` (default 5000 ms). Only GET requests and the OAuth token endpoint are retried. Payment POSTs are not.
+- A transaction amount with more than two decimal places sets `amountInvalid` and `amountMinor` to 0 instead of aborting `cursor()`. The original payload stays in `raw`.
+- `TransactionData::hasReference()` is false when `entryReference` is missing. Pending movements and blocks may omit it.
+
+### Upgrade Notes
+
+- `BalanceData::$amountMinor` stays the absolute value. Use `$signedAmountMinor` for the sign (`DBIT` is negative) and `isNegative()`.
+- A transaction amount with more than two decimal places no longer aborts `cursor()`. `amountMinor` is `0`, `amountInvalid` is `true`, and `raw` still holds the payload. Skip and log those rows.
+- `hasReference()` is false when `entryReference` is missing. Pending movements and blocks cannot be deduplicated by that id.
+- HTTP 429 waits for `Retry-After` (seconds or an HTTP date). Without it the delay is `retry_sleep * 2^(attempt-1)`, capped by `retry_max_sleep` (default 5000 ms). Only GET requests and the OAuth token endpoint are retried. Payment POSTs are not.
+- `moneta:accounts` and `moneta:check` are new. They are registered only in the console.
+- `Moneta::profile()`, `withToken()` and `withContext()` on `MonetaFake` share one state, so recorded calls and seeded data are visible on every clone.
+- `StatementService::json()`, `verify()`, `transactionTotals()` and `listFor()` are new. Existing statement list and file download calls are unchanged.
+
+## [1.3.0] - 2026-11-14
+
+### Added
+
+- `MinorAmount::toApi()` formats integer haléře as a two-decimal string. The payment JSON sends that string as a number, without a float conversion.
+- `PaymentOrderData` and `Moneta::payments()` prepare a batch (`POST /api/v4/vip/pisp/my/payments/batch`) or a one-by-one batch for signature in Internet Banking. The package does not execute a payment.
+- `batchStatus()` and `oneByOneStatus()` map `ACTC`, `ACSP` and `RJCT`.
+- `MonetaFake` records batches. `withBatchStatus()`, `assertBatchCreated()` and `assertNoBatchCreated()` cover them.
+
+### Upgrade Notes
+
+- Payment batches are new. Account, balance and transaction behaviour is unchanged.
+- A batch waits for the client's signature. Priority is always `NORM`. `HIGH` and `INST` are not sent.
+- A batch accepts at most 200 payments. An invalid account, a symbol longer than 10 digits, or a larger batch throws `InvalidPaymentOrderException` before any HTTP call.
+
 ## [1.2.0] - 2026-11-14
+
+> Tag `1.2.0` ukazuje na kód 1.1.0, použij `1.2.2` nebo novější.
 
 ### Added
 

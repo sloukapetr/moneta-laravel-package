@@ -3,6 +3,8 @@
 namespace SloukaPetr\Moneta;
 
 use Illuminate\Support\ServiceProvider;
+use SloukaPetr\Moneta\Console\AccountsCommand;
+use SloukaPetr\Moneta\Console\CheckCommand;
 
 class MonetaServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,13 @@ class MonetaServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                AccountsCommand::class,
+                CheckCommand::class,
+            ]);
+        }
+
         $this->publishes([
             __DIR__.'/../config/moneta.php' => config_path('moneta.php'),
         ], 'moneta-config');

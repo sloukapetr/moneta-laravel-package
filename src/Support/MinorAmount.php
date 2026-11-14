@@ -22,6 +22,16 @@ final class MinorAmount
         return $matches[1] === '-' ? -$minor : $minor;
     }
 
+    public static function toApi(int $minor): string
+    {
+        $sign = $minor < 0 ? '-' : '';
+        $absolute = abs($minor);
+        $major = intdiv($absolute, 100);
+        $fraction = $absolute % 100;
+
+        return $sign.$major.'.'.str_pad((string) $fraction, 2, '0', STR_PAD_LEFT);
+    }
+
     private static function decimalString(int|float|string $value): string
     {
         if (is_int($value)) {

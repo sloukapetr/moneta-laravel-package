@@ -69,6 +69,7 @@ return [
     'timeout' => 15,
     'retry' => 3,
     'retry_sleep' => 100,
+    'retry_max_sleep' => 5000,
 ];
 ```
 
@@ -157,6 +158,21 @@ $url = Moneta::statements()->downloadUrl($accountId, $statementId, 'PDF');
 $file = Moneta::statements()->downloadFile($fileId);
 ```
 
+## Statements
+
+Once a month, compare the movements stored by the application with the official JSON statement. Sandbox returns XML only, so exercise this against production or `Moneta::fake()->withStatement()`.
+
+```php
+$statements = Moneta::statements()->listFor($accountId, 2026, 2);
+
+$statement = Moneta::statements()->json($accountId, $statements[0]->accountStatementId);
+
+$statement->verify();
+$statement->transactionTotals();
+```
+
+`listFor()` asks for the first and last day of the month. `json()` reads `exportStatement` (`JSON$EMBD`). When the API returns only `dataDownloadURL`, the file is downloaded and parsed. Amounts are integer haléře. `verify()` checks `beginBalanceMinor + creditSumMinor - debitSumMinor === endBalanceMinor`. `transactionTotals()` sums the statement lines by direction. Compare that credit and debit with the synchronized movements. A failed `verify()` means the statement itself does not add up. A difference between `transactionTotals()` and the stored movements means the synchronization missed a line. `rejTurnCount` stays in `raw`.
+
 ## Transactions
 
 Booked incoming payments expose the amount in minor units (haléře), payment symbols and the counterparty taken from the debtor:
@@ -172,7 +188,11 @@ foreach (Moneta::transactions()->all($accountId) as $transaction) {
 }
 ```
 
-`$transaction->amount` and `$balance->value` remain available and are deprecated in favour of `amountMinor`.
+`$transaction->amount` and `$balance->value` remain available and are deprecated in favour of `amountMinor`. `$balance->amountMinor` is the absolute value. `$balance->signedAmountMinor` is negative when the indicator is `DBIT`, and `isNegative()` reports that sign.
+
+When `amount.value` has more than two decimal places, `amountMinor` is `0` and `amountInvalid` is `true`. The original payload stays in `raw`. Skip that transaction and log it. `cursor()` still returns the other transactions on the page.
+
+Pending movements and blocks (`PDNG`, `BLOCKED_*`) may omit `entryReference`. `hasReference()` is then `false`, so those rows cannot be deduplicated by that id.
 
 `between()` walks the inclusive `valueDate` range without loading every page first. `cursor()` does the same for any filters. Both request the API only while you iterate:
 
@@ -199,6 +219,36 @@ $token->daysUntilExpiry();
 
 HTTP 403 means the token is not a Moneta API token.
 
+## Commands
+
+`moneta:accounts` prints the account id, account number, IBAN, currency, name, available balance and booked balance. Amounts are `signedAmountMinor` with two decimal places. `--profile=` selects a named connection. `--json` prints the same rows for scripts.
+
+`moneta:check` prints one line per check, prefixed with `OK` or `CHYBA`. It reports the profile, sandbox or production mode and the base URL, whether a static token or client credentials are configured (never the values), how many accounts came back and how long that took. With a static token it also reads the expiration. `VAROVÁNÍ` means the token expires within `--warn-days` (default 14) and the command still exits 0. Any `CHYBA` exits 1.
+
+## Payments
+
+`payments()` only prepares a batch. Moneta does not execute it. The client signs the batch in Internet Banking. Until then the status is `ACTC` (awaiting signature), then `ACSP` (signed) or `RJCT` (rejected). A batch has at most 200 payments and the priority is always `NORM`.
+
+```php
+use SloukaPetr\Moneta\Data\PaymentOrderData;
+
+$batchId = Moneta::payments()->createBatch([
+    new PaymentOrderData(
+        amountMinor: 150050,
+        currency: 'CZK',
+        debtorAccount: '123456789/0600',
+        creditorAccount: '19-2000145399/0800',
+        vs: '2026001',
+        message: 'Faktura',
+        creditorName: 'Dodavatel',
+    ),
+]);
+
+Moneta::payments()->batchStatus($batchId);
+```
+
+Amounts are integer haléře. `150050` is sent as the JSON number `1500.50`. The account is an IBAN or a Czech BBAN (`[prefix-]number/bank`).
+
 ## Testing
 
 ```bash
@@ -218,7 +268,7 @@ $transactions = Moneta::transactions()->all($accountId);
 $fake->assertTransactionsFetched($accountId);
 ```
 
-`withAccount()`, `withTransaction()`, `withBalance()` and `withTokenExpiration()` build the same response shapes the real API uses. `failWith(401, 'NARR')` fails the following calls. A non-empty argument still goes to `Http::fake()`:
+`withAccount()`, `withTransaction()`, `withBalance()` and `withTokenExpiration()` build the same response shapes the real API uses. `failWith(401, 'NARR')` fails the following calls. A prepared batch is recorded too: `assertBatchCreated()`, `assertNoBatchCreated()` and `withBatchStatus()`. `profile()`, `withToken()` and `withContext()` share that fake state, and `assertProfileUsed()` checks which profile recorded a call. A non-empty argument still goes to `Http::fake()`:
 
 ```php
 Moneta::fake([

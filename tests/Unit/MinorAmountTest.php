@@ -18,6 +18,17 @@ class MinorAmountTest extends TestCase
         $this->assertSame(10000, MinorAmount::fromApi(100));
     }
 
+    public function test_to_api_formats_minor_units_with_two_decimals(): void
+    {
+        $this->assertSame('1500.50', MinorAmount::toApi(150050));
+        $this->assertSame('-0.10', MinorAmount::toApi(-10));
+        $this->assertSame('1.00', MinorAmount::toApi(100));
+
+        foreach ([150050, -10, 100, 0, -100, 1] as $minor) {
+            $this->assertSame($minor, MinorAmount::fromApi(MinorAmount::toApi($minor)));
+        }
+    }
+
     public function test_from_api_rejects_more_than_two_decimal_places(): void
     {
         $this->expectException(InvalidArgumentException::class);

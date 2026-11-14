@@ -9,41 +9,18 @@ use GuzzleHttp\Psr7\Response as PsrResponse;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Client\Response;
 use PHPUnit\Framework\Assert;
+use SloukaPetr\Moneta\Enums\BatchStatus;
 use SloukaPetr\Moneta\MonetaManager;
 
 final class MonetaFake extends MonetaManager
 {
-    /**
-     * @var array<int, array<string, mixed>>
-     */
-    protected array $accounts = [];
-
-    /**
-     * @var array<string, array<int, array<string, mixed>>>
-     */
-    protected array $transactions = [];
-
-    /**
-     * @var array<string, array<string, mixed>>
-     */
-    protected array $balances = [];
-
-    protected ?CarbonInterface $tokenExpiration = null;
-
-    protected ?int $failureStatus = null;
-
-    protected string $failureCode = 'ERROR';
-
-    protected int $entrySequence = 0;
-
-    /**
-     * @var array<int, array{kind: string, accountId: ?string, query: array<string, mixed>}>
-     */
-    protected array $calls = [];
+    private MonetaFakeState $state;
 
     public function __construct(Repository $config)
     {
         parent::__construct($config);
+
+        $this->state = new MonetaFakeState;
     }
 
     /**
@@ -51,7 +28,7 @@ final class MonetaFake extends MonetaManager
      */
     public function withAccount(string $id, array $overrides = []): static
     {
-        $this->accounts[] = array_replace_recursive([
+        $this->state->accounts[] = array_replace_recursive([
             'id' => $id,
             'nameI18N' => 'Account '.$id,
             'currency' => 'CZK',
@@ -75,7 +52,7 @@ final class MonetaFake extends MonetaManager
      */
     public function withTransaction(string $accountId, array $overrides = []): static
     {
-        $this->transactions[$accountId][] = array_replace_recursive([
+        $this->state->transactions[$accountId][] = array_replace_recursive([
             'entryReference' => $this->nextEntryReference(),
             'status' => 'BOOK',
             'creditDebitIndicator' => 'CRDT',
@@ -130,22 +107,36 @@ final class MonetaFake extends MonetaManager
             $balances[] = $this->balance('CLAV', $availableMinor);
         }
 
-        $this->balances[$accountId] = ['balances' => $balances];
+        $this->state->balances[$accountId] = ['balances' => $balances];
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, mixed>  $summary
+     * @param  array<int, array<string, mixed>>  $transactions
+     */
+    public function withStatement(string $accountId, array $summary, array $transactions = []): static
+    {
+        $this->state->statements[$accountId][] = [
+            'summary' => $summary,
+            'transactions' => $transactions,
+        ];
 
         return $this;
     }
 
     public function withTokenExpiration(CarbonInterface $at): static
     {
-        $this->tokenExpiration = $at;
+        $this->state->tokenExpiration = $at;
 
         return $this;
     }
 
     public function failWith(int $status, string $errorCode = 'ERROR'): static
     {
-        $this->failureStatus = $status;
-        $this->failureCode = $errorCode;
+        $this->state->failureStatus = $status;
+        $this->state->failureCode = $errorCode;
 
         return $this;
     }
@@ -183,14 +174,65 @@ final class MonetaFake extends MonetaManager
     {
         Assert::assertSame(
             [],
-            $this->calls,
+            $this->state->calls,
             'Moneta recorded an API request, but none were expected.',
+        );
+    }
+
+    public function withBatchStatus(string $batchId, BatchStatus $status): self
+    {
+        $this->state->batchStatuses[$batchId] = $status;
+
+        return $this;
+    }
+
+    public function assertBatchCreated(?callable $callback = null): void
+    {
+        $matches = array_filter(
+            $this->callsOf('batch'),
+            function (array $call) use ($callback): bool {
+                if ($callback === null) {
+                    return true;
+                }
+
+                return $callback($call['payload'] ?? []) === true;
+            },
+        );
+
+        Assert::assertNotEmpty(
+            $matches,
+            $callback === null
+                ? 'Expected a Moneta payment batch, but none was recorded.'
+                : 'Expected a Moneta payment batch matching the given callback, but none was recorded.',
+        );
+    }
+
+    public function assertProfileUsed(string $name): void
+    {
+        $matches = array_filter(
+            $this->state->calls,
+            fn (array $call): bool => ($call['profile'] ?? null) === $name,
+        );
+
+        Assert::assertNotEmpty(
+            $matches,
+            'Expected a Moneta request for profile ['.$name.'], but none was recorded.',
+        );
+    }
+
+    public function assertNoBatchCreated(): void
+    {
+        Assert::assertSame(
+            [],
+            $this->callsOf('batch'),
+            'A Moneta payment batch was created, but none were expected.',
         );
     }
 
     public function rawRequest(string $method, string $path, array $options = []): Response
     {
         $query = is_array($options['query'] ?? null) ? $options['query'] : [];
+        $payload = $this->payload($options);
         $normalized = trim($path, '/');
         $kind = 'other';
         $accountId = null;
@@ -203,17 +245,32 @@ final class MonetaFake extends MonetaManager
         } elseif (preg_match('#^api/v4/vip/aisp/my/accounts/([^/]+)/balance$#', $normalized, $matches) === 1) {
             $kind = 'balance';
             $accountId = rawurldecode($matches[1]);
+        } elseif (preg_match('#^api/v4/vip/aisp/my/accounts/([^/]+)/statement/download$#', $normalized, $matches) === 1) {
+            $kind = 'statement-download';
+            $accountId = rawurldecode($matches[1]);
         } elseif ($normalized === 'api/v1/vip/token/introspect') {
             $kind = 'introspect';
+        } elseif ($normalized === 'api/v4/vip/pisp/my/payments/batch' && strtolower($method) === 'post') {
+            $kind = 'batch';
+        } elseif ($normalized === 'api/v4/vip/pisp/my/payments/batch/onebyone' && strtolower($method) === 'post') {
+            $kind = 'onebyone';
+        } elseif (preg_match('#^api/v4/vip/pisp/my/payments/batch/onebyone/([^/]+)/status$#', $normalized, $matches) === 1) {
+            $kind = 'onebyone-status';
+            $accountId = rawurldecode($matches[1]);
+        } elseif (preg_match('#^api/v4/vip/pisp/my/payments/batch/([^/]+)/status$#', $normalized, $matches) === 1) {
+            $kind = 'batch-status';
+            $accountId = rawurldecode($matches[1]);
         }
 
-        $this->calls[] = [
+        $this->state->calls[] = [
             'kind' => $kind,
             'accountId' => $accountId,
             'query' => $query,
+            'payload' => $payload,
+            'profile' => $this->activeProfileName(),
         ];
 
-        $response = $this->response($kind, $accountId, $query);
+        $response = $this->response($kind, $accountId, $query, $payload);
 
         if ($response->failed()) {
             $this->throwForStatus($response);
@@ -225,24 +282,61 @@ final class MonetaFake extends MonetaManager
     /**
      * @param  array<string, mixed>  $query
      */
-    private function response(string $kind, ?string $accountId, array $query): Response
+    /**
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>|null
+     */
+    private function payload(array $options): ?array
     {
-        if ($this->failureStatus !== null) {
-            return $this->jsonResponse($this->failureStatus, [
+        if (is_string($options['body'] ?? null)) {
+            $decoded = json_decode($options['body'], true);
+
+            return is_array($decoded) ? $decoded : null;
+        }
+
+        return is_array($options['json'] ?? null) ? $options['json'] : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $query
+     * @param  array<string, mixed>|null  $payload
+     */
+    private function response(string $kind, ?string $accountId, array $query, ?array $payload): Response
+    {
+        if ($this->state->failureStatus !== null) {
+            return $this->jsonResponse($this->state->failureStatus, [
                 'errors' => [[
-                    'error' => $this->failureCode,
-                    'message' => $this->failureCode,
+                    'error' => $this->state->failureCode,
+                    'message' => $this->state->failureCode,
                 ]],
             ]);
+        }
+
+        if ($kind === 'statement-download') {
+            $statement = $this->statementBody($accountId ?? '', $query);
+
+            if ($statement === null) {
+                return $this->jsonResponse(404, [
+                    'errors' => [[
+                        'error' => 'ID_NOT_FOUND',
+                        'message' => 'Moneta fake has no statement for this account.',
+                    ]],
+                ]);
+            }
+
+            return $this->jsonResponse(200, $statement);
         }
 
         $body = match ($kind) {
             'accounts' => $this->accountPage(),
             'transactions' => $this->transactionPage($accountId ?? '', $query),
-            'balance' => $this->balances[$accountId ?? ''] ?? ['balances' => []],
+            'balance' => $this->state->balances[$accountId ?? ''] ?? ['balances' => []],
             'introspect' => [
-                'expiration' => $this->tokenExpiration?->format('Y-m-d\TH:i:sP'),
+                'expiration' => $this->state->tokenExpiration?->format('Y-m-d\TH:i:sP'),
             ],
+            'batch' => $this->batchCreated(),
+            'batch-status', 'onebyone-status' => $this->statusPayload($accountId ?? ''),
+            'onebyone' => $this->oneByOneCreated($payload ?? []),
             default => [
                 'errors' => [[
                     'error' => 'ID_NOT_FOUND',
@@ -262,10 +356,10 @@ final class MonetaFake extends MonetaManager
     private function accountPage(): array
     {
         return [
-            'accounts' => $this->accounts,
+            'accounts' => $this->state->accounts,
             'pageNumber' => 0,
-            'pageSize' => max(1, count($this->accounts)),
-            'pageCount' => $this->accounts === [] ? 0 : 1,
+            'pageSize' => max(1, count($this->state->accounts)),
+            'pageCount' => $this->state->accounts === [] ? 0 : 1,
         ];
     }
 
@@ -277,7 +371,7 @@ final class MonetaFake extends MonetaManager
     {
         $size = min(100, max(1, (int) ($query['size'] ?? 100)));
         $page = max(0, (int) ($query['page'] ?? 0));
-        $transactions = $this->transactions[$accountId] ?? [];
+        $transactions = $this->state->transactions[$accountId] ?? [];
         $pageCount = (int) ceil(count($transactions) / $size);
 
         $body = [
@@ -327,9 +421,9 @@ final class MonetaFake extends MonetaManager
 
     private function nextEntryReference(): string
     {
-        $this->entrySequence++;
+        $this->state->entrySequence++;
 
-        return 'entry-'.$this->entrySequence;
+        return 'entry-'.$this->state->entrySequence;
     }
 
     private function minorToApiValue(int $amountMinor): int|string
@@ -347,12 +441,81 @@ final class MonetaFake extends MonetaManager
     }
 
     /**
-     * @return array<int, array{kind: string, accountId: ?string, query: array<string, mixed>}>
+     * @param  array<string, mixed>  $query
+     * @return array<string, mixed>|null
+     */
+    private function statementBody(string $accountId, array $query): ?array
+    {
+        $requestedId = (string) ($query['accountStatementId'] ?? '');
+
+        foreach ($this->state->statements[$accountId] ?? [] as $statement) {
+            $storedId = (string) ($statement['summary']['accountStatementId'] ?? '');
+
+            if ($requestedId === '' || $storedId === '' || $storedId === $requestedId) {
+                return [
+                    'exportStatement' => $statement['summary'],
+                    'transactions' => $statement['transactions'],
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function batchCreated(): array
+    {
+        $this->state->batchSequence++;
+
+        return ['batchId' => 'batch-'.$this->state->batchSequence];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function oneByOneCreated(array $payload): array
+    {
+        $items = [];
+
+        foreach ($payload['payments'] ?? [] as $index => $payment) {
+            $instruction = is_array($payment)
+                ? (string) ($payment['paymentIdentification']['instructionIdentification'] ?? ($index + 1))
+                : (string) ($index + 1);
+
+            $this->state->paymentSequence++;
+
+            $items[] = [
+                'instructionIdentification' => $instruction,
+                'transactionIdentification' => 'tx-'.$this->state->paymentSequence,
+            ];
+        }
+
+        return [
+            'totalCount' => count($items),
+            'items' => $items,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function statusPayload(string $id): array
+    {
+        $status = $this->state->batchStatuses[$id] ?? BatchStatus::AwaitingSignature;
+
+        return ['instructionStatus' => $status->value];
+    }
+
+    /**
+     * @return array<int, array{kind: string, accountId: ?string, query: array<string, mixed>, payload: ?array}>
      */
     private function callsOf(string $kind, ?string $accountId = null): array
     {
         return array_values(array_filter(
-            $this->calls,
+            $this->state->calls,
             function (array $call) use ($kind, $accountId): bool {
                 if ($call['kind'] !== $kind) {
                     return false;

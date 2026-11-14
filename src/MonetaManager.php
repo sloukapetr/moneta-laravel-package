@@ -18,6 +18,7 @@ use SloukaPetr\Moneta\Exceptions\UnauthorizedException;
 use SloukaPetr\Moneta\Exceptions\ValidationException;
 use SloukaPetr\Moneta\Fakes\MonetaFake;
 use SloukaPetr\Moneta\Services\AccountService;
+use SloukaPetr\Moneta\Services\PaymentService;
 use SloukaPetr\Moneta\Services\StatementService;
 use SloukaPetr\Moneta\Services\TokenService;
 use SloukaPetr\Moneta\Services\TransactionService;
@@ -112,7 +113,7 @@ class MonetaManager
                 $payload['scope'] = $scope;
             }
 
-            $response = $this->pendingRequest()
+            $response = $this->pendingRequest(idempotent: true)
                 ->asForm()
                 ->post($tokenUrl, $payload);
         } catch (ConnectionException $exception) {
@@ -157,6 +158,11 @@ class MonetaManager
     public function token(): TokenService
     {
         return new TokenService($this);
+    }
+
+    public function payments(): PaymentService
+    {
+        return new PaymentService($this);
     }
 
     public function statements(): StatementService
@@ -214,14 +220,16 @@ class MonetaManager
             $issuedSandboxToken = (bool) $this->resolveConfig('sandbox', true);
         }
 
-        $pendingRequest = $this->pendingRequest()
+        $pendingRequest = $this->pendingRequest(strtolower($method) === 'get')
             ->baseUrl(rtrim($this->resolveConfig('base_url', 'https://api.moneta.cz'), '/'))
             ->withHeaders($headers);
 
         try {
             $response = match (strtolower($method)) {
                 'get' => $pendingRequest->get($path, $query),
-                'post' => $pendingRequest->post($path, $json),
+                'post' => is_string($options['body'] ?? null)
+                    ? $pendingRequest->withBody($options['body'], 'application/json')->post($path)
+                    : $pendingRequest->post($path, $json),
                 'put' => $pendingRequest->put($path, $json),
                 'patch' => $pendingRequest->patch($path, $json),
                 'delete' => $pendingRequest->delete($path, $query),
@@ -293,15 +301,61 @@ class MonetaManager
         throw new ApiException($message, $status, $errorCode, $scope, is_array($parameters) ? $parameters : [], $payload);
     }
 
-    protected function pendingRequest(): PendingRequest
+    protected function pendingRequest(bool $idempotent = false): PendingRequest
     {
-        return Http::timeout((int) $this->resolveConfig('timeout', 15))
-            ->retry(
-                max(1, (int) $this->resolveConfig('retry', 3)),
-                max(0, (int) $this->resolveConfig('retry_sleep', 100)),
-                fn (\Throwable $exception): bool => $this->shouldRetry($exception),
-                false,
-            );
+        $request = Http::timeout((int) $this->resolveConfig('timeout', 15));
+
+        if (! $idempotent) {
+            return $request;
+        }
+
+        return $request->retry(
+            max(1, (int) $this->resolveConfig('retry', 3)),
+            fn (int $attempt, \Throwable $exception): int => $this->retryDelay($attempt, $exception),
+            fn (\Throwable $exception): bool => $this->shouldRetry($exception),
+            false,
+        );
+    }
+
+    protected function retryDelay(int $attempt, \Throwable $exception): int
+    {
+        $cap = max(0, (int) $this->resolveConfig('retry_max_sleep', 5000));
+        $fromHeader = $this->retryAfterMilliseconds($exception);
+
+        if ($fromHeader !== null) {
+            return min($cap, $fromHeader);
+        }
+
+        $base = max(0, (int) $this->resolveConfig('retry_sleep', 100));
+        $shift = min(16, max(0, $attempt - 1));
+        $delay = $base * (2 ** $shift);
+
+        return (int) min($cap, $delay);
+    }
+
+    protected function retryAfterMilliseconds(\Throwable $exception): ?int
+    {
+        if (! $exception instanceof RequestException) {
+            return null;
+        }
+
+        $header = trim($exception->response->header('Retry-After'));
+
+        if ($header === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d+$/', $header) === 1) {
+            return (int) $header * 1000;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('!'.\DateTimeInterface::RFC7231, $header);
+
+        if ($date === false) {
+            return null;
+        }
+
+        return max(0, ($date->getTimestamp() - time()) * 1000);
     }
 
     protected function shouldRetry(\Throwable $exception): bool

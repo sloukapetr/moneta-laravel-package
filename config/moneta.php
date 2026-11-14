@@ -18,4 +18,5 @@ return [
     'timeout' => 15,
     'retry' => 3,
     'retry_sleep' => 100,
+    'retry_max_sleep' => 5000,
 ];
