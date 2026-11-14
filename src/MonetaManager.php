@@ -4,22 +4,31 @@ namespace SloukaPetr\Moneta;
 
 use Illuminate\Config\Repository;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use SloukaPetr\Moneta\Exceptions\ApiException;
 use SloukaPetr\Moneta\Exceptions\NetworkException;
 use SloukaPetr\Moneta\Exceptions\NotFoundException;
 use SloukaPetr\Moneta\Exceptions\RateLimitException;
+use SloukaPetr\Moneta\Exceptions\TwoFactorRequiredException;
 use SloukaPetr\Moneta\Exceptions\UnauthorizedException;
 use SloukaPetr\Moneta\Exceptions\ValidationException;
+use SloukaPetr\Moneta\Fakes\MonetaFake;
 use SloukaPetr\Moneta\Services\AccountService;
-use SloukaPetr\Moneta\Services\PaymentService;
 use SloukaPetr\Moneta\Services\StatementService;
+use SloukaPetr\Moneta\Services\TokenService;
 use SloukaPetr\Moneta\Services\TransactionService;
 
 class MonetaManager
 {
     protected array $headers = [];
+
     protected array $overrides = [];
+
+    protected ?string $profile = null;
 
     public function __construct(protected Repository $config)
     {
@@ -41,13 +50,27 @@ class MonetaManager
         return $instance;
     }
 
+    /**
+     * Clone bound to a named connection. `default` is the flat configuration.
+     * A named profile overrides only the keys it defines.
+     */
+    public function profile(string $name): static
+    {
+        $this->assertKnownProfile($name);
+
+        $instance = clone $this;
+        $instance->profile = $name;
+
+        return $instance;
+    }
+
     public function withClientCredentials(?string $scope = null): static
     {
         $tokenResponse = $this->issueAccessToken(scope: $scope);
         $token = (string) ($tokenResponse['access_token'] ?? '');
 
         if ($token === '') {
-            throw new \RuntimeException('Moneta OAuth token response does not contain access_token.');
+            throw new ApiException('Moneta OAuth token response does not contain access_token.');
         }
 
         return $this->withToken($token);
@@ -62,19 +85,20 @@ class MonetaManager
         $clientId ??= (string) $this->resolveConfig('client_id', '');
         $clientSecret ??= (string) $this->resolveConfig('client_secret', '');
 
-        if ($scope === null) {
-            $configuredScope = $this->resolveConfig('oauth_scope');
-            if (is_string($configuredScope) && trim($configuredScope) !== '') {
-                $scope = $configuredScope;
-            } elseif ((bool) $this->resolveConfig('sandbox', true)) {
-                $scope = 'vip_sandbox';
-            }
-        }
+        $scope = $scope ?? $this->configuredScope();
 
         $tokenUrl = (string) $this->resolveConfig('oauth_token_url', 'https://api.moneta.cz/auth/oauth/v2/token');
 
         if ($clientId === '' || $clientSecret === '') {
             throw new \InvalidArgumentException('Moneta OAuth client_id and client_secret must be configured.');
+        }
+
+        $cacheKey = $this->accessTokenCacheKey($tokenUrl, $clientId, $clientSecret, $scope, $grantType);
+
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached) && is_string($cached['access_token'] ?? null) && $cached['access_token'] !== '') {
+            return $cached;
         }
 
         try {
@@ -88,24 +112,36 @@ class MonetaManager
                 $payload['scope'] = $scope;
             }
 
-            $response = Http::asForm()
-                ->timeout((int) $this->resolveConfig('timeout', 15))
-                ->retry((int) $this->resolveConfig('retry', 3), 100, null, false)
+            $response = $this->pendingRequest()
+                ->asForm()
                 ->post($tokenUrl, $payload);
         } catch (ConnectionException $exception) {
-            throw new NetworkException('Unable to connect to Moneta OAuth endpoint.', 0, $exception);
+            throw new NetworkException('Unable to connect to Moneta OAuth endpoint.', previous: $exception);
         }
 
         if ($response->failed()) {
             $this->throwForStatus($response);
         }
 
-        return $response->json() ?? [];
+        $token = $response->json() ?? [];
+        $expiresIn = (int) ($token['expires_in'] ?? 0);
+
+        if (is_string($token['access_token'] ?? null) && $token['access_token'] !== '' && $expiresIn > 30) {
+            Cache::put($cacheKey, $token, $expiresIn - 30);
+        }
+
+        return $token;
     }
 
-    public function fake(array $responses = []): void
+    public function fake(array $responses = []): ?MonetaFake
     {
-        Http::fake($responses);
+        if ($responses !== []) {
+            Http::fake($responses);
+
+            return null;
+        }
+
+        return new MonetaFake($this->config);
     }
 
     public function accounts(): AccountService
@@ -118,14 +154,14 @@ class MonetaManager
         return new TransactionService($this);
     }
 
+    public function token(): TokenService
+    {
+        return new TokenService($this);
+    }
+
     public function statements(): StatementService
     {
         return new StatementService($this);
-    }
-
-    public function payments(): PaymentService
-    {
-        return new PaymentService($this);
     }
 
     public function get(string $path, array $query = [], array $headers = []): array
@@ -157,12 +193,30 @@ class MonetaManager
 
     public function rawRequest(string $method, string $path, array $options = []): Response
     {
+        return $this->dispatch($method, $path, $options, true);
+    }
+
+    private function dispatch(string $method, string $path, array $options, bool $refreshSandboxToken): Response
+    {
         $query = $options['query'] ?? [];
         $json = $options['json'] ?? [];
-        $pendingRequest = Http::baseUrl(rtrim($this->resolveConfig('base_url', 'https://api.moneta.cz'), '/'))
-            ->withHeaders(array_merge($this->defaultHeaders(), $options['headers'] ?? []))
-            ->timeout((int) $this->resolveConfig('timeout', 15))
-            ->retry((int) $this->resolveConfig('retry', 3), 100, null, false);
+        $headers = array_merge($this->defaultHeaders(), $options['headers'] ?? []);
+        $issuedSandboxToken = false;
+
+        if (! isset($headers['Authorization']) && $this->canIssueAccessToken()) {
+            $accessToken = (string) ($this->issueAccessToken()['access_token'] ?? '');
+
+            if ($accessToken === '') {
+                throw new ApiException('Moneta OAuth token response does not contain access_token.');
+            }
+
+            $headers['Authorization'] = 'Bearer '.$accessToken;
+            $issuedSandboxToken = (bool) $this->resolveConfig('sandbox', true);
+        }
+
+        $pendingRequest = $this->pendingRequest()
+            ->baseUrl(rtrim($this->resolveConfig('base_url', 'https://api.moneta.cz'), '/'))
+            ->withHeaders($headers);
 
         try {
             $response = match (strtolower($method)) {
@@ -174,7 +228,13 @@ class MonetaManager
                 default => throw new \InvalidArgumentException('Unsupported HTTP method: '.$method),
             };
         } catch (ConnectionException $exception) {
-            throw new NetworkException('Unable to connect to Moneta API.', 0, $exception);
+            throw new NetworkException('Unable to connect to Moneta API.', previous: $exception);
+        }
+
+        if ($response->status() === 401 && $refreshSandboxToken && $issuedSandboxToken) {
+            $this->forgetIssuedAccessToken();
+
+            return $this->dispatch($method, $path, $options, false);
         }
 
         if ($response->failed()) {
@@ -210,8 +270,12 @@ class MonetaManager
         $scope = $payload['errors'][0]['scope'] ?? null;
         $parameters = $payload['errors'][0]['parameters'] ?? [];
 
+        if ($status === 401 && $errorCode === 'NARR') {
+            throw new TwoFactorRequiredException($message, $status, $errorCode, $scope, is_array($parameters) ? $parameters : [], $payload);
+        }
+
         if ($status === 401) {
-            throw new UnauthorizedException($message, $status, $errorCode, $scope, $parameters, $payload);
+            throw new UnauthorizedException($message, $status, $errorCode, $scope, is_array($parameters) ? $parameters : [], $payload);
         }
 
         if ($status === 400) {
@@ -226,7 +290,33 @@ class MonetaManager
             throw new RateLimitException($message, $status, $errorCode, $scope, $parameters, $payload);
         }
 
-        throw new \RuntimeException('Moneta API request failed with status '.$status);
+        throw new ApiException($message, $status, $errorCode, $scope, is_array($parameters) ? $parameters : [], $payload);
+    }
+
+    protected function pendingRequest(): PendingRequest
+    {
+        return Http::timeout((int) $this->resolveConfig('timeout', 15))
+            ->retry(
+                max(1, (int) $this->resolveConfig('retry', 3)),
+                max(0, (int) $this->resolveConfig('retry_sleep', 100)),
+                fn (\Throwable $exception): bool => $this->shouldRetry($exception),
+                false,
+            );
+    }
+
+    protected function shouldRetry(\Throwable $exception): bool
+    {
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        if (! $exception instanceof RequestException) {
+            return false;
+        }
+
+        $status = $exception->response->status();
+
+        return $status === 429 || $status >= 500;
     }
 
     protected function resolveConfig(string $key, mixed $default = null): mixed
@@ -235,6 +325,114 @@ class MonetaManager
             return $this->overrides[$key];
         }
 
+        $profileName = $this->activeProfileName();
+
+        if ($profileName !== 'default') {
+            $profile = $this->profileConfig($profileName);
+
+            if (array_key_exists($key, $profile)) {
+                return $profile[$key];
+            }
+        }
+
         return $this->config->get('moneta.'.$key, $default);
+    }
+
+    protected function activeProfileName(): string
+    {
+        $name = $this->profile ?? $this->config->get('moneta.default_profile', 'default');
+        $name = is_string($name) && trim($name) !== '' ? $name : 'default';
+        $this->assertKnownProfile($name);
+
+        return $name;
+    }
+
+    protected function assertKnownProfile(string $name): void
+    {
+        if ($name === 'default' || array_key_exists($name, $this->profiles())) {
+            return;
+        }
+
+        throw new \InvalidArgumentException('Unknown Moneta profile ['.$name.'].');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function profileConfig(string $name): array
+    {
+        $profile = $this->profiles()[$name] ?? [];
+
+        return is_array($profile) ? $profile : [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function profiles(): array
+    {
+        $profiles = $this->config->get('moneta.profiles', []);
+
+        return is_array($profiles) ? $profiles : [];
+    }
+
+    protected function canIssueAccessToken(): bool
+    {
+        if (isset($this->headers['Authorization'])) {
+            return false;
+        }
+
+        $apiToken = $this->resolveConfig('api_token');
+
+        if (is_string($apiToken) && trim($apiToken) !== '') {
+            return false;
+        }
+
+        $clientId = $this->resolveConfig('client_id');
+        $clientSecret = $this->resolveConfig('client_secret');
+
+        return is_string($clientId) && trim($clientId) !== ''
+            && is_string($clientSecret) && trim($clientSecret) !== '';
+    }
+
+    protected function configuredScope(): ?string
+    {
+        $configuredScope = $this->resolveConfig('oauth_scope');
+
+        if (is_string($configuredScope) && trim($configuredScope) !== '') {
+            return $configuredScope;
+        }
+
+        if ((bool) $this->resolveConfig('sandbox', true)) {
+            return 'vip_sandbox';
+        }
+
+        return null;
+    }
+
+    protected function forgetIssuedAccessToken(): void
+    {
+        $clientId = (string) $this->resolveConfig('client_id', '');
+        $clientSecret = (string) $this->resolveConfig('client_secret', '');
+        $tokenUrl = (string) $this->resolveConfig('oauth_token_url', 'https://api.moneta.cz/auth/oauth/v2/token');
+
+        Cache::forget($this->accessTokenCacheKey(
+            $tokenUrl,
+            $clientId,
+            $clientSecret,
+            $this->configuredScope(),
+            'client_credentials',
+        ));
+    }
+
+    protected function accessTokenCacheKey(string $tokenUrl, string $clientId, string $clientSecret, ?string $scope, string $grantType): string
+    {
+        return 'moneta.oauth.'.hash('sha256', implode('|', [
+            $tokenUrl,
+            $clientId,
+            $clientSecret,
+            $scope ?? '',
+            $grantType,
+        ]));
     }
 }

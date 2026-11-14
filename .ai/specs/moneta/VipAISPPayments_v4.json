@@ -1,0 +1,1686 @@
+{
+  "components" : {
+    "schemas" : {
+      "AccountBalanceResponse" : {
+        "description" : "Response containing account balance information.",
+        "properties" : {
+          "balances" : {
+            "description" : "Collection of balances of a client payment account.",
+            "items" : {
+              "$ref" : "#/components/schemas/AispBalance"
+            },
+            "type" : "array"
+          }
+        },
+        "title" : "AccountBalanceResponse",
+        "type" : "object"
+      },
+      "AccountStatement" : {
+        "properties" : {
+          "accountStatementId" : {
+            "type" : "string"
+          },
+          "dateFrom" : {
+            "type" : "string"
+          },
+          "dateTo" : {
+            "type" : "string"
+          },
+          "formats" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Format"
+            },
+            "type" : "array"
+          },
+          "month" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "period" : {
+            "type" : "string"
+          },
+          "sequenceNumber" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "year" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "title" : "AccountStatement",
+        "type" : "object"
+      },
+      "AccountStatementListResponse" : {
+        "properties" : {
+          "accountStatements" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountStatement"
+            },
+            "type" : "array"
+          }
+        },
+        "title" : "AccountStatementListResponse",
+        "type" : "object"
+      },
+      "AccountStatementResponse" : {
+        "properties" : {
+          "dataDownloadURL" : {
+            "example" : "https://api.moneta.cz/api/v3/vip/aisp/my/accounts/statement?file=2fa44cc6facffbcd5e8b46ccfd123fd",
+            "type" : "string"
+          },
+          "exportStatement" : {
+            "$ref" : "#/components/schemas/ExportStatement"
+          },
+          "transactions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AccountStatementTransaction"
+            },
+            "type" : "array"
+          }
+        },
+        "title" : "AccountStatementResponse",
+        "type" : "object"
+      },
+      "AccountStatementTransaction" : {
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAmount"
+          },
+          "bankTransactionCode" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionBankTransactionCode"
+          },
+          "bookingDate" : {
+            "type" : "string"
+          },
+          "creditDebitIndicator" : {
+            "type" : "string"
+          },
+          "entryDetails" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionEntryDetails"
+          },
+          "entryReference" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "valueDate" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionAccount" : {
+        "properties" : {
+          "identification" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionIdentification"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionAgent" : {
+        "properties" : {
+          "financialInstitutionIdentification" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionFinancialInstitutionIdentification"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionAmount" : {
+        "properties" : {
+          "currency" : {
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionAmountDetails" : {
+        "properties" : {
+          "counterValueAmount" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionInstructedAmmountDetails"
+          },
+          "instructedAmount" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionInstructedAmmountDetails"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionBankTransactionCode" : {
+        "properties" : {
+          "proprietary" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionProprietary"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionEntryDetails" : {
+        "properties" : {
+          "transactionDetails" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionTransactionDetails"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionFinancialInstitutionIdentification" : {
+        "properties" : {
+          "bic" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionIdentification" : {
+        "properties" : {
+          "iban" : {
+            "type" : "string"
+          },
+          "other" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionOtherIdentification"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionInstructedAmmountDetails" : {
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAmount"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionOtherIdentification" : {
+        "properties" : {
+          "identification" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionProprietary" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "issuer" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionReferences" : {
+        "properties" : {
+          "accountServicerReference" : {
+            "type" : "string"
+          },
+          "chequeNumber" : {
+            "type" : "string"
+          },
+          "clearingSystemReference" : {
+            "type" : "string"
+          },
+          "endToEndIdentification" : {
+            "type" : "string"
+          },
+          "instructionIdentification" : {
+            "type" : "string"
+          },
+          "messageIdentification" : {
+            "type" : "string"
+          },
+          "paymentInformationIdentification" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionRelatedAgents" : {
+        "properties" : {
+          "creditorAgent" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAgent"
+          },
+          "debtorAgent" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAgent"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionRelatedParties" : {
+        "properties" : {
+          "creditor" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionRelatedParty"
+          },
+          "creditorAccount" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAccount"
+          },
+          "debtor" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionRelatedParty"
+          },
+          "debtorAccount" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAccount"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionRelatedParty" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountStatementTransactionTransactionDetails" : {
+        "properties" : {
+          "additionalTransactionInformation" : {
+            "type" : "string"
+          },
+          "amountDetails" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionAmountDetails"
+          },
+          "references" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionReferences"
+          },
+          "relatedAgents" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionRelatedAgents"
+          },
+          "relatedParties" : {
+            "$ref" : "#/components/schemas/AccountStatementTransactionRelatedParties"
+          }
+        },
+        "type" : "object"
+      },
+      "AccountsResponse" : {
+        "description" : "Paged client payment account list. Each account in this list includes a unique id which can be then used in URI to get e.g. account detail.",
+        "properties" : {
+          "accounts" : {
+            "description" : "Collection of client accounts",
+            "items" : {
+              "$ref" : "#/components/schemas/AispAccount"
+            },
+            "type" : "array"
+          },
+          "nextPage" : {
+            "description" : "The number of the next page. If the current page is the last page of the list then this parameter is not listed.",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageCount" : {
+            "description" : "Total page count",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageNumber" : {
+            "description" : "Current page number",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageSize" : {
+            "description" : "Number of items on this particular page.",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "pageCount", "pageNumber", "pageSize" ],
+        "title" : "AccountsResponse",
+        "type" : "object"
+      },
+      "AispAccount" : {
+        "description" : "Client account",
+        "properties" : {
+          "currency" : {
+            "description" : "Payer's account currency",
+            "type" : "string"
+          },
+          "feePlanI18N" : {
+            "description" : "Fee plan name, e.g. Genius Free & Flexi",
+            "type" : "string"
+          },
+          "id" : {
+            "description" : "API payment account identifier",
+            "type" : "string"
+          },
+          "identification" : {
+            "$ref" : "#/components/schemas/Identification",
+            "description" : "Payer's account identification"
+          },
+          "nameI18N" : {
+            "description" : "Account name",
+            "type" : "string"
+          },
+          "ownersNames" : {
+            "description" : "List of names of the account holders for consumers or trade names for commercial clients",
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "productI18N" : {
+            "description" : "Product name",
+            "type" : "string"
+          },
+          "servicer" : {
+            "$ref" : "#/components/schemas/Servicer",
+            "description" : "Bank identification"
+          }
+        },
+        "title" : "AispAccount",
+        "type" : "object"
+      },
+      "AispBalance" : {
+        "description" : "Client payment account balance",
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/Amount",
+            "description" : "Account available amount. The currecy of this amount is the currency of the account in question."
+          },
+          "creditDebitIndicator" : {
+            "description" : "Indicates whether the balance of the account in question is positive or negative.",
+            "enum" : [ "CRDT", "DBIT" ],
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/BalanceDate",
+            "description" : "Timestamp of this balance information"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/BalanceType",
+            "description" : "Type of balance"
+          }
+        },
+        "title" : "AispBalance",
+        "type" : "object"
+      },
+      "AispTransaction" : {
+        "description" : "Transaction in the history of transactions",
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/Amount",
+            "description" : "Payment amount in the currency of the account for which the transaction history is generated."
+          },
+          "bookingDate" : {
+            "$ref" : "#/components/schemas/TransactionDate",
+            "description" : "The date when the transaction was processed in ISODate (YYYY-MM-DD) format."
+          },
+          "creditDebitIndicator" : {
+            "description" : "Indication whether the transaction is to credit (CRDT) or to debit (DBIT) the related account.",
+            "enum" : [ "CRDT", "DBIT" ],
+            "type" : "string"
+          },
+          "enteredDate" : {
+            "$ref" : "#/components/schemas/TransactionDate",
+            "description" : "The date when the transaction was initiated in ISODate (YYYY-MM-DD) format."
+          },
+          "entryDetails" : {
+            "$ref" : "#/components/schemas/EntryDetails",
+            "description" : "Transaction details."
+          },
+          "entryReference" : {
+            "description" : "Payment identifier given by the bank.",
+            "type" : "string"
+          },
+          "reversalIndicator" : {
+            "description" : "Indication whether the transaction is a cancellation. The value true indicates cancellation, value false is used otherwise.",
+            "type" : "boolean"
+          },
+          "status" : {
+            "description" : "Transaction status from the bank's point of view. Possible values are BOOK for processed transactions and PDNG for pending transaction.",
+            "enum" : [ "BOOK", "PDNG" ],
+            "type" : "string"
+          },
+          "valueDate" : {
+            "$ref" : "#/components/schemas/TransactionDate",
+            "description" : "The due date of the transaction in ISODate (YYYY-MM-DD) format."
+          }
+        },
+        "title" : "AispTransaction",
+        "type" : "object"
+      },
+      "AispTransactionDetails" : {
+        "description" : "Transaction details.",
+        "properties" : {
+          "additionalTransactionInformation" : {
+            "description" : "Card transactions may contain card payment method description in this field.",
+            "type" : "string"
+          },
+          "purpose" : {
+            "$ref" : "#/components/schemas/Purpose",
+            "description" : "Payment purpose."
+          },
+          "references" : {
+            "$ref" : "#/components/schemas/References",
+            "description" : "Set of references for unique identification of this transaction."
+          },
+          "relatedParties" : {
+            "$ref" : "#/components/schemas/RelatedParties",
+            "description" : "Information about related parties. It contains account numbers, names and address of debtor and creditor."
+          },
+          "remittanceInformation" : {
+            "$ref" : "#/components/schemas/RemittanceInformation",
+            "description" : "Payment remittance information."
+          }
+        },
+        "title" : "AispTransactionDetails",
+        "type" : "object"
+      },
+      "Amount" : {
+        "description" : "Amount",
+        "properties" : {
+          "currency" : {
+            "description" : "Amount currency",
+            "type" : "string"
+          },
+          "value" : {
+            "description" : "Amount with the precision of two decimal places",
+            "type" : "number"
+          }
+        },
+        "required" : [ "currency", "value" ],
+        "title" : "Amount",
+        "type" : "object"
+      },
+      "BalanceDate" : {
+        "description" : "Timestamp of a balance information",
+        "properties" : {
+          "dateTime" : {
+            "description" : "Date or date and time of a balance information in ISO 8601 format",
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "title" : "BalanceDate",
+        "type" : "object"
+      },
+      "BalanceType" : {
+        "description" : "Type of balance",
+        "properties" : {
+          "codeOrProprietary" : {
+            "$ref" : "#/components/schemas/CodeOrProprietary"
+          }
+        },
+        "title" : "BalanceType",
+        "type" : "object"
+      },
+      "CodeOrProprietary" : {
+        "description" : "Code or proprietary expression. Currently returns ledger balance (code CLBD) and available balance (code CLAV)",
+        "properties" : {
+          "code" : {
+            "description" : "Code",
+            "type" : "string"
+          }
+        },
+        "title" : "CodeOrProprietary",
+        "type" : "object"
+      },
+      "CreditorReferenceInformation" : {
+        "description" : "Reference information provided by the recipient that allows identification of underlying documents (eg invoices)",
+        "properties" : {
+          "reference" : {
+            "description" : "Value of variable, specific and constant symbols in the following form:\n  VS:{variable symbol} KS:{constant symbol} SS:{specific symbol}\n\n  Filled for domestic payments only.",
+            "type" : "string"
+          }
+        },
+        "required" : [ "reference" ],
+        "title" : "CreditorReferenceInformation",
+        "type" : "object"
+      },
+      "DebtorIdentification" : {
+        "description" : "Debtor account identification. It is required that at least 'iban' or 'other' is not null",
+        "properties" : {
+          "iban" : {
+            "description" : "IBAN.",
+            "type" : "string"
+          },
+          "other" : {
+            "$ref" : "#/components/schemas/DebtorOtherIdentification",
+            "description" : "Unique account identification given by the bank using account identification scheme."
+          }
+        },
+        "title" : "DebtorIdentification",
+        "type" : "object"
+      },
+      "DebtorOtherIdentification" : {
+        "description" : "Unique account identification given by the bank using account identification scheme.",
+        "properties" : {
+          "identification" : {
+            "description" : "Account number in Czech BBAN format",
+            "type" : "string"
+          }
+        },
+        "title" : "DebtorOtherIdentification",
+        "type" : "object"
+      },
+      "EntryDetails" : {
+        "description" : "Transaction details.",
+        "properties" : {
+          "transactionDetails" : {
+            "$ref" : "#/components/schemas/AispTransactionDetails",
+            "description" : "Transaction details."
+          }
+        },
+        "title" : "EntryDetails",
+        "type" : "object"
+      },
+      "ExportStatement" : {
+        "properties" : {
+          "accountCurrency" : {
+            "type" : "string"
+          },
+          "accountNumber" : {
+            "type" : "string"
+          },
+          "accountPrefix" : {
+            "type" : "string"
+          },
+          "bankCode" : {
+            "type" : "string"
+          },
+          "begBalance" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "creditSum" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "debitSum" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "finBalance" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "generateDate" : {
+            "type" : "string"
+          },
+          "period" : {
+            "type" : "string"
+          },
+          "productName" : {
+            "type" : "string"
+          },
+          "rejTurnCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sequenceNumber" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "Format" : {
+        "properties" : {
+          "availability" : {
+            "type" : "string"
+          },
+          "format" : {
+            "enum" : [ "XML", "PDF", "ABO_MMB", "ABO_KB", "ABO_IPB" ],
+            "type" : "string"
+          }
+        },
+        "title" : "Format",
+        "type" : "object"
+      },
+      "Identification" : {
+        "description" : "Debtor account identification.",
+        "properties" : {
+          "iban" : {
+            "description" : "IBAN",
+            "type" : "string"
+          },
+          "other" : {
+            "description" : "Other account identifier e.g. BBAN.",
+            "type" : "string"
+          }
+        },
+        "title" : "Identification",
+        "type" : "object"
+      },
+      "PostalAddress" : {
+        "description" : "Address",
+        "properties" : {
+          "addressLine" : {
+            "description" : "Street address",
+            "type" : "string"
+          },
+          "country" : {
+            "description" : "Country (CZ, DE, ...)",
+            "type" : "string"
+          },
+          "townName" : {
+            "description" : "Town",
+            "type" : "string"
+          }
+        },
+        "title" : "PostalAddress",
+        "type" : "object"
+      },
+      "PsdTransactionListResponse" : {
+        "description" : "Paged client account transaction list.",
+        "properties" : {
+          "nextPage" : {
+            "description" : "The number of the next page. If the current page is the last page of the list then this parameter is not listed.",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageCount" : {
+            "description" : "Total page count",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageNumber" : {
+            "description" : "Current page number",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageSize" : {
+            "description" : "Number of items on this particular page.",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "transactions" : {
+            "description" : "Collection of transactions",
+            "items" : {
+              "$ref" : "#/components/schemas/AispTransaction"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "pageCount", "pageNumber", "pageSize" ],
+        "title" : "PsdTransactionListResponse",
+        "type" : "object"
+      },
+      "Purpose" : {
+        "description" : "Payment purpose",
+        "properties" : {
+          "proprietary" : {
+            "description" : "Payment type category in proprietary format.",
+            "type" : "string"
+          }
+        },
+        "title" : "Purpose",
+        "type" : "object"
+      },
+      "References" : {
+        "description" : "Set of references for unique identification of this transaction.",
+        "properties" : {
+          "chequeNumber" : {
+            "description" : "Check number for check operations and asterisk card number in case of card transactions. The card number is always in the format xxxxxxxxxxxx1234 where 8-28 digits from the range 0-9 are allowed according to the standard.",
+            "type" : "string"
+          },
+          "clearingSystemReference" : {
+            "description" : "Bank-defined enumeration value identifying the type of payment. For card transactions, card association identification may be used.",
+            "enum" : [ "PAYMENT_ORDER_DOMESTIC", "PAYMENT_ORDER_FOREIGN", "PAYMENT_ORDER_FOREIGN_IN", "PAYMENT_ORDER_FOREIGN_OUT", "STANDING_ORDER", "PAYMENT_CARD", "TELLER", "INTEREST_FEES", "INTEREST", "INTEREST_LOAN", "DIRECT_DEBIT", "SIPO", "ORDER_TO_DIRECT_DEBIT", "NON_FINANCIAL_TERM_DEPOSIT", "NON_FINANCIAL_LOAN", "OTHER_TERM_DEPOSIT", "OTHER_FINANCIAL_LOAN", "UNSPECIFIED", "PRINCIPAL_TERM_DEPOSIT", "PRINCIPAL_LOAN", "FX_CONVERSION", "BLOCKED_PAYMENT_CARD", "BLOCKED_PAYMENT_ORDER_DOMESTIC", "BLOCKED_PAYMENT_ORDER_FOREIGN", "BLOCKED_UNSPECIFIED" ],
+            "type" : "string"
+          },
+          "endToEndIdentification" : {
+            "description" : "Unique identifier specified by the payer that serves for unmistakable payment identification which is passed throug the whole payment chain in an unchanged state. This field can also contain variable symbol.",
+            "type" : "string"
+          },
+          "instructionIdentification" : {
+            "description" : "Third-party payment identification or constant symbol can be filled in this field.",
+            "type" : "string"
+          },
+          "paymentInformationIdentification" : {
+            "description" : "Additional bank references assigned to the payment by the bank; in case of card payments, the sequence number of the payment card may be added. This field can also contain specific symbol.",
+            "type" : "string"
+          },
+          "transactionDescription" : {
+            "description" : "Transaction description.",
+            "type" : "string"
+          }
+        },
+        "title" : "References",
+        "type" : "object"
+      },
+      "RelatedParties" : {
+        "description" : "Information about related parties. It contains account numbers, names and address of debtor and creditor.",
+        "properties" : {
+          "creditor" : {
+            "$ref" : "#/components/schemas/RelatedParty",
+            "description" : "Recipient information. Recipient is defined by the direction of the payment."
+          },
+          "creditorAccount" : {
+            "$ref" : "#/components/schemas/RelatedPartyAccount",
+            "description" : "Recipient's account information. Recipient is defined by the direction of the payment."
+          },
+          "debtor" : {
+            "$ref" : "#/components/schemas/RelatedParty",
+            "description" : "Payer information. Payer is defined by the direction of the payment."
+          },
+          "debtorAccount" : {
+            "$ref" : "#/components/schemas/RelatedPartyAccount",
+            "description" : "Payer's account information. Payer is defined by the direction of the payment."
+          }
+        },
+        "title" : "RelatedParties",
+        "type" : "object"
+      },
+      "RelatedParty" : {
+        "description" : "Debtor or creditor",
+        "properties" : {
+          "name" : {
+            "description" : "Name. Required for SEPA and foreign payments",
+            "type" : "string"
+          },
+          "postalAddress" : {
+            "$ref" : "#/components/schemas/PostalAddress",
+            "description" : "Address"
+          }
+        },
+        "title" : "RelatedParty",
+        "type" : "object"
+      },
+      "RelatedPartyAccount" : {
+        "description" : "Debtor's or creditor's account",
+        "properties" : {
+          "currency" : {
+            "description" : "Currency",
+            "type" : "string"
+          },
+          "identification" : {
+            "$ref" : "#/components/schemas/DebtorIdentification",
+            "description" : "Account identification"
+          }
+        },
+        "required" : [ "identification" ],
+        "title" : "RelatedPartyAccount",
+        "type" : "object"
+      },
+      "RemittanceInformation" : {
+        "description" : "Payment information",
+        "properties" : {
+          "structured" : {
+            "$ref" : "#/components/schemas/StructuredRemittanceInformation",
+            "description" : "Structured message for the recipient - constant, variable and specific symbol"
+          },
+          "unstructured" : {
+            "description" : "Unstructured message for the recipient",
+            "type" : "string"
+          }
+        },
+        "title" : "RemittanceInformation",
+        "type" : "object"
+      },
+      "Servicer" : {
+        "description" : "Bank identification",
+        "properties" : {
+          "bankCode" : {
+            "description" : "Bank code",
+            "type" : "string"
+          },
+          "bic" : {
+            "description" : "Bank's BIC code",
+            "type" : "string"
+          },
+          "countryCode" : {
+            "description" : "Country code in ISO format of 3 alphanumeric characters supported by SWIFT",
+            "type" : "string"
+          }
+        },
+        "title" : "Servicer",
+        "type" : "object"
+      },
+      "StructuredRemittanceInformation" : {
+        "description" : "Structured message for the recipient - constant, variable and specific symbol",
+        "properties" : {
+          "creditorReferenceInformation" : {
+            "$ref" : "#/components/schemas/CreditorReferenceInformation",
+            "description" : "Reference information provided by the recipient that allows identification of underlying documents (e.g. invoices)"
+          }
+        },
+        "required" : [ "creditorReferenceInformation" ],
+        "title" : "StructuredRemittanceInformation",
+        "type" : "object"
+      },
+      "TransactionDate" : {
+        "properties" : {
+          "date" : {
+            "description" : "Date in ISODate format, i.e. YYYY-MM-DD.",
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "title" : "TransactionDate",
+        "type" : "object"
+      },
+      "ValidationError" : {
+        "description" : "Single error description",
+        "properties" : {
+          "error" : {
+            "description" : "Error code",
+            "type" : "string"
+          },
+          "message" : {
+            "description" : "Optional text description. Suitable e.g. for error logging or auditing, not for direct output to the user.",
+            "type" : "string"
+          },
+          "parameters" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "List of supplemental parameters related to this particular error.",
+            "type" : "object"
+          },
+          "scope" : {
+            "description" : "JSON path to request field related to this particular error",
+            "type" : "string"
+          }
+        },
+        "title" : "ValidationError",
+        "type" : "object"
+      },
+      "ValidationErrorResponse" : {
+        "description" : "Error response",
+        "properties" : {
+          "errors" : {
+            "description" : "List of errors encountered during request processing",
+            "items" : {
+              "$ref" : "#/components/schemas/ValidationError"
+            },
+            "type" : "array"
+          }
+        },
+        "title" : "ValidationErrorResponse",
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "OAuth2ClientCredentials" : {
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : {
+              "vip_sandbox" : "Description of the vip_sandbox scope"
+            },
+            "tokenUrl" : "https://api.moneta.cz/auth/oauth/v2/token"
+          }
+        },
+        "type" : "oauth2"
+      }
+    }
+  },
+  "host" : "api.moneta.cz:8443",
+  "info" : {
+    "description" : "+ This API provides information about user's own accounts. \n+ All endpoints require user to be authorized. The user proves his authorization by sending **Authorization**: Bearer {token} in a HTTP header.\n+ This version v4 of the API supports tokens generated via Moneta Internet Bank and sandbox token generated via api /auth/oauth/v2/token with using client id, client secret, grant_type: client_credentials and scope: vip_sandbox in request body..\n### **Api in sandbox mode:**\n+ allows you to develop or test an API before it is ready for production\n+ the service returns predefined mocked test data\n+ validations are not available as in production mode\n+ **Note**: /api/v4/vip/aisp/my/accounts/statement - The API returns only xml file in sandbox mode",
+    "title" : "REST API implementation of VIP bank API",
+    "version" : "1.0.1"
+  },
+  "openapi" : "3.0.0",
+  "paths" : {
+    "/api/v4/vip/aisp/my/accounts" : {
+      "get" : {
+        "deprecated" : false,
+        "description" : "Paged client payment account list. Each account in this list includes a unique id which can be then used in URI to get e.g. account detail. Only directly owned accounts are listed.\n\nPossible error codes are:\n * **404 PAGE_NOT_FOUND** - page in the request doesn't exist\n * **400 PARAMETER_INVALID** - parameter value is not valid\n",
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "in" : "header",
+          "name" : "application_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Comma separated list of sorting orders (ASC, DESC). The order of this list corresponds to the order in the sort field.",
+          "in" : "query",
+          "name" : "order",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Requested page number (first page is indexed with 0)",
+          "example" : 10,
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Requested page size. Maximum value is 100. Higher number will be capped to 100.",
+          "example" : 10,
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 10,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Comma separated list of sorting fields ordered by importance. Sorting by all fields is supported, nested fields must by specified by properly URL encoded JSON path expression, e.g. `sort=identification.iban` or `sort=ownersNames`.",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountsResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Client payment account list",
+        "tags" : [ "Client's Own Accounts Information" ]
+      }
+    },
+    "/api/v4/vip/aisp/my/accounts/statement" : {
+      "get" : {
+        "deprecated" : false,
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "in" : "header",
+          "name" : "application_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Unique File identifier",
+          "example" : "2fa44cc6facffbcd5e8b46ccfd123fd",
+          "in" : "query",
+          "name" : "file",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/octet-stream" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              },
+              "application/pdf" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "Note: The API returns xml file in sandbox mode."
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Downloading the statement",
+        "tags" : [ "Statement Of Account" ]
+      }
+    },
+    "/api/v4/vip/aisp/my/accounts/{id}/balance" : {
+      "get" : {
+        "deprecated" : false,
+        "description" : "Disponible account balance based on the given account reference id.\n\nPossible error codes are:\n * **404 ID_NOT_FOUND** - invalid or unknown account id\n * **400 AC09** - unsupported currency\n",
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "in" : "header",
+          "name" : "application_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Account currency",
+          "in" : "query",
+          "name" : "currency",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "Account id",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountBalanceResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Account balance",
+        "tags" : [ "Client's Own Accounts Information" ]
+      }
+    },
+    "/api/v4/vip/aisp/my/accounts/{id}/statement/download" : {
+      "get" : {
+        "deprecated" : false,
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "in" : "header",
+          "name" : "application_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Unique account statement identifier.",
+          "in" : "query",
+          "name" : "accountStatementId",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Standardized or Bank-specific features. Supported values are 'JSON$EMBD', 'JSON$STND'",
+          "in" : "query",
+          "name" : "feature",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Chosen format of the statement, e.g. PDF, XML.",
+          "in" : "query",
+          "name" : "format",
+          "required" : true,
+          "schema" : {
+            "enum" : [ "XML", "PDF", "ABO_MMB", "ABO_KB", "ABO_IPB", "JSON" ],
+            "type" : "string"
+          }
+        }, {
+          "description" : "Account id",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountStatementResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Download account statement. Returns dataDownloadURL or embedded JSON statement.",
+        "tags" : [ "Statement Of Account" ]
+      }
+    },
+    "/api/v4/vip/aisp/my/accounts/{id}/statements" : {
+      "get" : {
+        "deprecated" : false,
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "in" : "header",
+          "name" : "application_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Availability specifies whether the account statement isimmediately available `IMMEDIATE` or has been archived bythe bank `ARCHIVED`. If the value is not filled in, the default value `ALL` is used. (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "availability",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Day od account statement in case of daily frequency. Values (1-366). (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "day",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "From date, start of a matching period (format: YYYY-MM-DD).",
+          "in" : "query",
+          "name" : "from",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Halfyear of account statement. values 1, 2. (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "halfyear",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Account id",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Enum: intersects, encloses. The parametr defines a way how the start/end date of a statement is treated in comparision with From/To dates supplied in URL query. (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "matching",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Month of account statement.Values (1-12). (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "month",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Paging. Required page. + Default: 0 (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Quarter of account statement. Values (1, 2, 3, 4). (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "quarter",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Paging. Number of entries per page. (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "End date of a matching period (format: YYYY-MM-DD).",
+          "in" : "query",
+          "name" : "to",
+          "required" : true,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Week of account statement. Denotes week of the year as\nnumber (1-53). (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "week",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Year of account statement. (currently unsupported parameter)",
+          "in" : "query",
+          "name" : "year",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountStatementListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "List of client account statements",
+        "tags" : [ "Statement Of Account" ]
+      }
+    },
+    "/api/v4/vip/aisp/my/accounts/{id}/transactions" : {
+      "get" : {
+        "deprecated" : false,
+        "description" : "Paged client account transactions list. Transaction history is provided at most 2 years backand includes blocked transactions.\n\nPossible error codes are:\n * **404 ID_NOT_FOUND** - invalid or unknown account id\n * **404 PAGE_NOT_FOUND** - page in the request doesn't exist\n * **400 PARAMETER_INVALID** - parameter value is not valid\n * **400 DT01** - invalid date\n * **401 NARR** - two factor verification is needed for requested transaction history\n",
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "in" : "header",
+          "name" : "application_name",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Requested transaction history beginning date in ISODate format. Filters on `valueDate` field.",
+          "in" : "query",
+          "name" : "fromDate",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Account id",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Specification of sorting order - `ASC`, `DESC` - given by the sorting field.",
+          "in" : "query",
+          "name" : "order",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Requested page (first page is indexed with 0)",
+          "example" : 10,
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Number of transactions on a page. Maximum value is 100. Higher number will be capped to 100. Possible blocked transactions will be added to a page even if it exceeds the maximum value of 100 records",
+          "example" : 10,
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "default" : 10,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Sorting field. One sorting field is supported, allowed values for sorting are:\n\n* `date` corresponds to `bookingDate` by default or `enteredDate` for specific types of transactions like credit card blocks\n* `amount` corresponds to `amount.value` field",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "allowEmptyValue" : false,
+          "description" : "Requested transaction history end date (inclusive) in ISODate format. Filters on `valueDate` field.",
+          "in" : "query",
+          "name" : "toDate",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PsdTransactionListResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Transaction history",
+        "tags" : [ "Client's Own Accounts Information" ]
+      }
+    }
+  },
+  "schemes" : [ "https" ],
+  "servers" : [ {
+    "url" : "https://api.moneta.cz"
+  } ],
+  "tags" : [ {
+    "name" : "Client's Own Accounts Information"
+  }, {
+    "name" : "Statement Of Account"
+  } ]
+}

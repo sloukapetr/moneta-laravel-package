@@ -2,6 +2,7 @@
 
 namespace SloukaPetr\Moneta\Tests\Feature;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use SloukaPetr\Moneta\Facades\Moneta;
 use SloukaPetr\Moneta\Tests\TestCase;
@@ -144,5 +145,40 @@ class MonetaClientTest extends TestCase
 
             return $request['scope'] === 'vip_sandbox';
         });
+    }
+
+    public function test_client_credentials_token_is_reused_until_it_expires(): void
+    {
+        Cache::flush();
+
+        Http::fake([
+            'https://api.moneta.cz/auth/oauth/v2/token' => Http::response([
+                'access_token' => 'oauth-token-cached',
+                'token_type' => 'Bearer',
+                'expires_in' => 1200,
+                'scope' => 'vip_sandbox',
+            ], 200),
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts*' => Http::response([
+                'accounts' => [],
+                'pageNumber' => 0,
+                'pageSize' => 10,
+                'pageCount' => 0,
+            ], 200),
+        ]);
+
+        $client = Moneta::withContext([
+            'client_id' => 'client-id',
+            'client_secret' => 'client-secret',
+            'oauth_scope' => 'vip_sandbox',
+        ]);
+
+        $client->withClientCredentials()->accounts()->all();
+        $client->withClientCredentials()->accounts()->all();
+
+        $tokenRequests = collect(Http::recorded())->filter(
+            fn (array $pair) => $pair[0]->url() === 'https://api.moneta.cz/auth/oauth/v2/token'
+        );
+
+        $this->assertCount(1, $tokenRequests);
     }
 }

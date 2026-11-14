@@ -74,6 +74,45 @@ class MonetaAispTest extends TestCase
         $this->assertSame('0001', $transactions[0]->specificSymbol);
     }
 
+    public function test_transactions_all_walks_every_page(): void
+    {
+        Http::fake([
+            'https://api.moneta.cz/api/v4/vip/aisp/my/accounts/acc-1/transactions*' => Http::sequence()
+                ->push([
+                    'transactions' => [
+                        $this->transaction('trx-1'),
+                    ],
+                    'pageNumber' => 0,
+                    'pageSize' => 1,
+                    'pageCount' => 2,
+                    'nextPage' => 1,
+                ])
+                ->push([
+                    'transactions' => [
+                        $this->transaction('trx-2'),
+                    ],
+                    'pageNumber' => 1,
+                    'pageSize' => 1,
+                    'pageCount' => 2,
+                ]),
+        ]);
+
+        $transactions = Moneta::transactions()->all('acc-1', ['fromDate' => '2026-08-01']);
+
+        $this->assertSame(['trx-1', 'trx-2'], array_map(
+            fn ($transaction) => $transaction->entryReference,
+            $transactions,
+        ));
+
+        $pages = collect(Http::recorded())->map(function (array $pair) {
+            parse_str((string) parse_url($pair[0]->url(), PHP_URL_QUERY), $query);
+
+            return (int) ($query['page'] ?? -1);
+        })->all();
+
+        $this->assertSame([0, 1], $pages);
+    }
+
     public function test_statement_file_download_returns_binary_body(): void
     {
         Http::fake([
@@ -139,5 +178,16 @@ class MonetaAispTest extends TestCase
                 && $request->hasHeader('business_name', 'Override Business')
                 && $request->hasHeader('identification_number', '99999999');
         });
+    }
+
+    /** @return array<string, mixed> */
+    protected function transaction(string $entryReference): array
+    {
+        return [
+            'entryReference' => $entryReference,
+            'status' => 'BOOK',
+            'creditDebitIndicator' => 'CRDT',
+            'amount' => ['currency' => 'CZK', 'value' => 10],
+        ];
     }
 }

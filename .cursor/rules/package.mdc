@@ -1,0 +1,8 @@
+---
+description: Pravidla pro vývoj balíčku sloukapetr/moneta-laravel-package (Moneta VIP API)
+globs: src/**,config/**,tests/**,README.md,CHANGELOG.md,composer.json
+alwaysApply: true
+---
+
+Pravidla: @.ai/rules/package.md
+Přehled úkolů: @.ai/tasks/README.md

@@ -38,16 +38,51 @@ class AccountService
 
     public function getBalance(string $id, array $filters = []): BalanceData
     {
-        $response = $this->moneta->get('api/v4/vip/aisp/my/accounts/'.$id.'/balance', $filters);
+        $balances = $this->mapBalances(
+            $this->moneta->get('api/v4/vip/aisp/my/accounts/'.$id.'/balance', $filters)
+        );
 
+        return $balances[0] ?? BalanceData::fromArray([]);
+    }
+
+    /**
+     * All balances of one account, including booked (CLBD) and available (CLAV).
+     *
+     * Endpoint: `GET /api/v4/vip/aisp/my/accounts/{id}/balance`.
+     *
+     * @return array<int, BalanceData>
+     */
+    public function getBalances(string $id): array
+    {
+        return $this->mapBalances(
+            $this->moneta->get('api/v4/vip/aisp/my/accounts/'.$id.'/balance')
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     * @return array<int, BalanceData>
+     */
+    private function mapBalances(array $response): array
+    {
         $balances = $response['balances'] ?? $response;
 
-        if (is_array($balances) && array_is_list($balances)) {
-            $balance = $balances[0] ?? [];
-        } else {
-            $balance = $balances;
+        if (! is_array($balances)) {
+            return [];
         }
 
-        return BalanceData::fromArray($balance);
+        if (! array_is_list($balances)) {
+            $balances = [$balances];
+        }
+
+        $mapped = [];
+
+        foreach ($balances as $balance) {
+            if (is_array($balance)) {
+                $mapped[] = BalanceData::fromArray($balance);
+            }
+        }
+
+        return $mapped;
     }
 }

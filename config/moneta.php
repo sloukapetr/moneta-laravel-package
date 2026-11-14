@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'default_profile' => env('MONETA_PROFILE', 'default'),
+    'profiles' => [
+        // 'firma-b' => ['api_token' => env('MONETA_FIRMA_B_TOKEN'), 'sandbox' => false, 'identification_number' => env('MONETA_FIRMA_B_ID')],
+    ],
     'sandbox' => env('MONETA_SANDBOX', true),
     'api_token' => env('MONETA_API_TOKEN'),
     'client_id' => env('MONETA_CLIENT_ID'),
@@ -13,4 +17,5 @@ return [
     'base_url' => env('MONETA_BASE_URL', 'https://api.moneta.cz'),
     'timeout' => 15,
     'retry' => 3,
+    'retry_sleep' => 100,
 ];

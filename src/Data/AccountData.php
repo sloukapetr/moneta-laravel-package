@@ -15,11 +15,14 @@ class AccountData
         public string $countryCode = '',
         public string $productName = '',
         public string $feePlan = '',
+        public ?string $accountNumber = null,
     ) {
     }
 
     public static function fromArray(array $data): self
     {
+        $accountNumber = data_get($data, 'identification.other');
+
         return new self(
             (string) ($data['id'] ?? ''),
             (string) ($data['nameI18N'] ?? ''),
@@ -31,6 +34,7 @@ class AccountData
             (string) data_get($data, 'servicer.countryCode', ''),
             (string) ($data['productI18N'] ?? ''),
             (string) ($data['feePlanI18N'] ?? ''),
+            is_string($accountNumber) && $accountNumber !== '' ? $accountNumber : null,
         );
     }
 }
