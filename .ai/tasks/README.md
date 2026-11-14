@@ -14,6 +14,6 @@ Stavy: `todo` · `doing` · `done` · `blocked`
 | 004 | Lazy procházení transakcí a introspect tokenu | done |
 | 005 | `Moneta::fake()` s builderem a asercemi | done |
 | 006 | Vydání 1.2.0 | done |
-| 007 | (později) PISP: dávkové platby k podpisu | todo |
+| 007 | PISP: dávkové platby k podpisu, vydání 1.3.0 | todo |
 
-Pořadí: 001 → 002 → 003 → 004 → 005 → 006. Aplikace it-elektro potřebuje 1.2.0 (úkol 008 v aplikaci).
+Pořadí: 001 → … → 006 → 007. Aplikace it-elektro potřebuje 1.2.2+ (úkol 008 v aplikaci). Pozor: tag `1.2.0` ukazuje na kód 1.1.0.

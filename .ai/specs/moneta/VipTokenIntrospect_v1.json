@@ -1,0 +1,155 @@
+{
+  "components" : {
+    "schemas" : {
+      "ValidationError" : {
+        "description" : "Single error description",
+        "properties" : {
+          "error" : {
+            "description" : "Error code",
+            "type" : "string"
+          },
+          "message" : {
+            "description" : "Optional text description. Suitable e.g. for error logging or auditing, not for direct output to the user.",
+            "type" : "string"
+          }
+        },
+        "title" : "ValidationError",
+        "type" : "object"
+      },
+      "ValidationErrorResponse" : {
+        "description" : "Error response",
+        "properties" : {
+          "errors" : {
+            "description" : "List of errors encountered during request processing",
+            "items" : {
+              "$ref" : "#/components/schemas/ValidationError"
+            },
+            "type" : "array"
+          }
+        },
+        "title" : "ValidationErrorResponse",
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "OAuth2ClientCredentials" : {
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : {
+              "vip_sandbox" : "Description of the vip_sandbox scope"
+            },
+            "tokenUrl" : "https://api.moneta.cz/auth/oauth/v2/token"
+          }
+        },
+        "type" : "oauth2"
+      }
+    }
+  },
+  "host" : "api.moneta.cz:8443",
+  "info" : {
+    "description" : "+ This API is used to validate VIP (Moneta API) tokens and retrieve their expiration time. If the provided token is not a Moneta API token, the endpoint returns **403** with the message: 'This is not a Moneta API token. This API is intended solely for validating the authenticity of a Moneta API token.'",
+    "title" : "REST API implementation of VIP bank API",
+    "version" : "1.0.0"
+  },
+  "openapi" : "3.0.3",
+  "paths" : {
+    "/api/v1/vip/token/introspect" : {
+      "get" : {
+        "deprecated" : false,
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "explode" : false,
+          "in" : "header",
+          "name" : "identification_number",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "style" : "simple"
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "explode" : false,
+          "in" : "header",
+          "name" : "business_name",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "style" : "simple"
+        }, {
+          "description" : "The name of the application to which our APIs are integrated.",
+          "explode" : false,
+          "in" : "header",
+          "name" : "application_name",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          },
+          "style" : "simple"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "properties" : {
+                    "expiration" : {
+                      "description" : "token expiration timestamp",
+                      "example" : "2026-03-06T11:38:09+01:00",
+                      "format" : "date-time",
+                      "type" : "string"
+                    }
+                  },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "The request lacks valid authentication credentials for the requested resource."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Token Introspect",
+        "tags" : [ "Token Introspect API" ]
+      }
+    }
+  },
+  "schemes" : [ "https" ],
+  "servers" : [ {
+    "url" : "https://api.moneta.cz"
+  } ],
+  "tags" : [ {
+    "name" : "Token Introspect API"
+  } ]
+}

@@ -1,0 +1,462 @@
+{
+  "components" : {
+    "schemas" : {
+      "Amount" : {
+        "description" : "Amount",
+        "properties" : {
+          "currency" : {
+            "description" : "Amount currency",
+            "type" : "string"
+          },
+          "value" : {
+            "description" : "Amount with the precision of two decimal places",
+            "type" : "number"
+          }
+        },
+        "required" : [ "currency", "value" ],
+        "type" : "object"
+      },
+      "CreditorReferenceInformation" : {
+        "description" : "Reference information provided by the recipient that allows identification of underlying documents (eg invoices)",
+        "properties" : {
+          "reference" : {
+            "description" : "Value of variable, specific and constant symbols in the following form:\n> \"VS:{variable symbol} KS:{constant symbol} SS:{specific symbol}\"\n\nFilled for domestic payments only.",
+            "type" : "string"
+          }
+        },
+        "required" : [ "reference" ],
+        "type" : "object"
+      },
+      "DebtorIdentification" : {
+        "description" : "Debtor account identification. It is required that at least 'iban' or 'other' is not null",
+        "properties" : {
+          "iban" : {
+            "description" : "IBAN.",
+            "type" : "string"
+          },
+          "other" : {
+            "$ref" : "#/components/schemas/DebtorOtherIdentification"
+          }
+        },
+        "type" : "object"
+      },
+      "DebtorOtherIdentification" : {
+        "description" : "Unique account identification given by the bank using account identification scheme.",
+        "properties" : {
+          "identification" : {
+            "description" : "Account number in Czech BBAN format",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaymentAmount" : {
+        "description" : "Amount",
+        "properties" : {
+          "instructedAmount" : {
+            "$ref" : "#/components/schemas/Amount"
+          }
+        },
+        "required" : [ "instructedAmount" ],
+        "type" : "object"
+      },
+      "PispStandingOrderRequest" : {
+        "description" : "Standing Payment Order initialisation request",
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/PaymentAmount"
+          },
+          "creditorAccount" : {
+            "$ref" : "#/components/schemas/RelatedPartyAccount"
+          },
+          "debtorAccount" : {
+            "$ref" : "#/components/schemas/RelatedPartyAccount"
+          },
+          "remittanceInformation" : {
+            "$ref" : "#/components/schemas/StandingOrderRemittanceInformation"
+          },
+          "requestedExecutionDate" : {
+            "description" : "Requested execution date",
+            "type" : "string"
+          },
+          "standingOrder" : {
+            "$ref" : "#/components/schemas/StandingOrderDetails"
+          },
+          "standingOrderIdentification" : {
+            "$ref" : "#/components/schemas/StandingOrderTransactionIdentification"
+          }
+        },
+        "required" : [ "amount", "creditorAccount", "debtorAccount", "requestedExecutionDate", "standingOrder" ],
+        "type" : "object"
+      },
+      "PispStandingOrderResponse" : {
+        "description" : "Standing Payment Order initialisation response",
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/PaymentAmount"
+          },
+          "creditorAccount" : {
+            "$ref" : "#/components/schemas/RelatedPartyAccount"
+          },
+          "debtorAccount" : {
+            "$ref" : "#/components/schemas/RelatedPartyAccount"
+          },
+          "instructionStatus" : {
+            "description" : "Individual or batch payment instruction status",
+            "enum" : [ "RJCT", "FOR_SIGNING", "ACSP", "ACSC", "CANCELLED", "ACTC" ],
+            "type" : "string"
+          },
+          "itemId" : {
+            "description" : "Approval center item identification.",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "paymentTypeInformation" : {
+            "$ref" : "#/components/schemas/StandingOrderTypeInformation"
+          },
+          "remittanceInformation" : {
+            "$ref" : "#/components/schemas/RemittanceInformation"
+          },
+          "requestedExecutionDate" : {
+            "description" : "Requested execution date",
+            "type" : "string"
+          },
+          "secondFactor" : {
+            "description" : "Second factor necessary.",
+            "type" : "boolean"
+          },
+          "standingOrder" : {
+            "$ref" : "#/components/schemas/StandingOrderDetails"
+          },
+          "standingOrderIdentification" : {
+            "$ref" : "#/components/schemas/StandingOrderTransactionIdentification"
+          }
+        },
+        "required" : [ "amount", "creditorAccount", "debtorAccount", "instructionStatus", "paymentTypeInformation", "remittanceInformation", "requestedExecutionDate", "standingOrder", "standingOrderIdentification" ],
+        "type" : "object"
+      },
+      "RelatedPartyAccount" : {
+        "description" : "Debtor's or creditor's account",
+        "properties" : {
+          "currency" : {
+            "description" : "Currency",
+            "type" : "string"
+          },
+          "identification" : {
+            "$ref" : "#/components/schemas/DebtorIdentification"
+          }
+        },
+        "required" : [ "identification" ],
+        "type" : "object"
+      },
+      "RemittanceInformation" : {
+        "description" : "Payment information",
+        "properties" : {
+          "structured" : {
+            "$ref" : "#/components/schemas/StructuredRemittanceInformation"
+          },
+          "unstructured" : {
+            "description" : "Unstructured message for the recipient",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "StandingOrderDetails" : {
+        "description" : "Period and duration of the standing order",
+        "properties" : {
+          "alias" : {
+            "description" : "User-defined standing order payment name, max 18 characters.",
+            "maxLength" : 18,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "execution" : {
+            "$ref" : "#/components/schemas/StandingOrderExecution"
+          },
+          "validity" : {
+            "$ref" : "#/components/schemas/StandingOrderValidity"
+          }
+        },
+        "required" : [ "execution" ],
+        "type" : "object"
+      },
+      "StandingOrderExecution" : {
+        "description" : "Features of execution a standing order for payment.",
+        "properties" : {
+          "interval" : {
+            "description" : "Defines how often order is executed. Interval every_ten_days is no longer supported.",
+            "enum" : [ "WEEKLY", "EVERY_TEN_DAYS", "MONTHLY", "BI_MONTHLY", "QUARTERLY", "HALFYEARLY", "YEARLY" ],
+            "type" : "string"
+          },
+          "mode" : {
+            "description" : "Defines how standing order will be cancelled",
+            "enum" : [ "UNTIL_DATE", "UNTIL_CANCELLATION" ],
+            "type" : "string"
+          },
+          "modeDue" : {
+            "description" : "Defines how the date when order should be executed is specified. The only currently allowedvalue is `DUE_OR_NEXT_DAY_OF_MONTH`, which is also the default when the field is omitted.",
+            "enum" : [ "DUE_OR_NEXT_DAY_OF_MONTH" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "interval", "mode" ],
+        "type" : "object"
+      },
+      "StandingOrderRemittanceInformation" : {
+        "description" : "Payment information",
+        "properties" : {
+          "structured" : {
+            "$ref" : "#/components/schemas/StructuredRemittanceInformation"
+          },
+          "unstructured" : {
+            "description" : "Unstructured message for the recipient, max 18 characters.",
+            "maxLength" : 18,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "StandingOrderServiceLevel" : {
+        "properties" : {
+          "code" : {
+            "description" : "Type of payment. Use `DMCT` for domestic payment in CZK.",
+            "enum" : [ "DMCT" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "code" ],
+        "type" : "object"
+      },
+      "StandingOrderTransactionIdentification" : {
+        "description" : "Identification of a standing order transaction.",
+        "properties" : {
+          "endToEndIdentification" : {
+            "description" : "Payer identification (SEPA transactions only).",
+            "maxLength" : 35,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "instructionIdentification" : {
+            "description" : "Payment identification entered by a third party, or a constant symbol.",
+            "type" : "string"
+          },
+          "transactionIdentification" : {
+            "description" : "Transaction identification for subsequent payment order management.\nSee other methods on standing order resource.",
+            "type" : "string"
+          }
+        },
+        "required" : [ "transactionIdentification" ],
+        "type" : "object"
+      },
+      "StandingOrderTypeInformation" : {
+        "description" : "Type of payment within standing order.\nOnly Czech domestic payments in CZK are currently allowed.",
+        "properties" : {
+          "serviceLevel" : {
+            "$ref" : "#/components/schemas/StandingOrderServiceLevel"
+          }
+        },
+        "required" : [ "serviceLevel" ],
+        "type" : "object"
+      },
+      "StandingOrderValidity" : {
+        "description" : "Elements restricting the validity of the standing order.\nMandatory for `UNTIL_DATE` execution mode.",
+        "properties" : {
+          "lastExecutionDate" : {
+            "description" : "Date of cancellation of the standing payment order.",
+            "type" : "string"
+          }
+        },
+        "required" : [ "lastExecutionDate" ],
+        "type" : "object"
+      },
+      "StructuredRemittanceInformation" : {
+        "description" : "Structured message for the recipient - constant, variable and specific symbol",
+        "properties" : {
+          "creditorReferenceInformation" : {
+            "$ref" : "#/components/schemas/CreditorReferenceInformation"
+          }
+        },
+        "required" : [ "creditorReferenceInformation" ],
+        "type" : "object"
+      },
+      "ValidationError" : {
+        "description" : "Single error description",
+        "properties" : {
+          "error" : {
+            "description" : "Error code",
+            "type" : "string"
+          },
+          "message" : {
+            "description" : "Optional text description. Suitable e.g. for error logging or auditing, not for direct output to the user.",
+            "type" : "string"
+          },
+          "parameters" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "description" : "List of supplemental parameters related to this particular error.",
+            "type" : "object"
+          },
+          "scope" : {
+            "description" : "JSON path to request field related to this particular error",
+            "type" : "string"
+          }
+        },
+        "title" : "ValidationError",
+        "type" : "object"
+      },
+      "ValidationErrorResponse" : {
+        "description" : "Error response",
+        "properties" : {
+          "errors" : {
+            "description" : "List of errors encountered during request processing",
+            "items" : {
+              "$ref" : "#/components/schemas/ValidationError"
+            },
+            "type" : "array"
+          }
+        },
+        "title" : "ValidationErrorResponse",
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "OAuth2ClientCredentials" : {
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : {
+              "vip_sandbox" : "Description of the vip_sandbox scope"
+            },
+            "tokenUrl" : "https://api.moneta.cz/auth/oauth/v2/token"
+          }
+        },
+        "type" : "oauth2"
+      }
+    }
+  },
+  "host" : "api.moneta.cz:8443",
+  "info" : {
+    "description" : "+ This API allows the creation of standing orders \n+ All endpoints require user to be authorized. The user proves his authorization by sending **Authorization**: Bearer {token} in a HTTP header.\n+ This version v4 of the API supports tokens generated via Moneta Internet Bank and sandbox token generated via api /auth/oauth/v2/token with using client id, client secret, grant_type: client_credentials and scope: vip_sandbox in request body.\n+ All submitted payments must subsequently be approved or rejected in Internet Banking.\n+ The due date for submitted payments can be scheduled up to 360 days ahead of the current date.\n### **Api in sandbox mode:**\n+ allows you to develop or test an API before it is ready for production\n+ the service returns predefined mocked test data\n+ validations are not available as in production mode.\n\n**Note**: Newly created applications must be assigned to an API Plan (**Applications → APIs → + → Sandbox**) before they can successfully access the APIs. Otherwise, requests may return 401 Unauthorized.",
+    "title" : "REST API implementation of VIP bank API - PISP v4",
+    "version" : "1.0.0"
+  },
+  "openapi" : "3.0.0",
+  "paths" : {
+    "/api/v4/vip/pisp/my/standingorders" : {
+      "post" : {
+        "deprecated" : false,
+        "parameters" : [ {
+          "description" : "The identification number (IČO) of a legal entity or entrepreneur.",
+          "in" : "header",
+          "name" : "identification_number",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "description" : "The official name of the business entity associated with the given identification number (IČO).",
+          "in" : "header",
+          "name" : "business_name",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PispStandingOrderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PispStandingOrderResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint in wrong state, with invalid parameters, etc."
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "The request lacks valid authentication credentials for the requested resource."
+          },
+          "403" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "The client does not have access rights to the content."
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Calling the endpoint on nonexistent resource"
+          },
+          "405" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "The request method is known by the server but is not supported by the target resource."
+          },
+          "429" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "description" : "Server received too many requests from a client within a given period of time."
+          }
+        },
+        "security" : [ {
+          "OAuth2ClientCredentials" : [ "vip_sandbox" ]
+        } ],
+        "summary" : "Create new standing order",
+        "tags" : [ "Standing Payment Order" ]
+      }
+    }
+  },
+  "schemes" : [ "https" ],
+  "servers" : [ {
+    "url" : "https://api.moneta.cz"
+  } ],
+  "tags" : [ {
+    "name" : "Standing Payment Order"
+  } ]
+}
