@@ -15,5 +15,9 @@ Stavy: `todo` · `doing` · `done` · `blocked`
 | 005 | `Moneta::fake()` s builderem a asercemi | done |
 | 006 | Vydání 1.2.0 | done |
 | 007 | PISP: dávkové platby k podpisu, vydání 1.3.0 | todo |
+| 008 | Opravy po kontrole 1.2.2 (fake a profily, znaménko zůstatku, 429, neplatná částka, chybějící reference) | todo |
+| 009 | Artisan příkazy `moneta:accounts` a `moneta:check` | todo |
+| 010 | Výpis v JSON a kontrolní součty | todo |
+| 011 | Vydání 1.4.0 | todo |
 
-Pořadí: 001 → … → 006 → 007. Aplikace it-elektro potřebuje 1.2.2+ (úkol 008 v aplikaci). Pozor: tag `1.2.0` ukazuje na kód 1.1.0.
+Pořadí: 001 → … → 006 → 007 (1.3.0) → 008 → 009 → 010 → 011 (1.4.0). Aplikace it-elektro (úkol 008) staví na 1.4.0. Pozor: tag `1.2.0` ukazuje na kód 1.1.0, platná 1.2.x je `1.2.2`.
